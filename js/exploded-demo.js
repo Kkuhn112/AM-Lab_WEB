@@ -115,8 +115,6 @@
     .xd .part { transition: transform 1.7s cubic-bezier(.7,0,.3,1); transition-delay: calc(0.3s - var(--d)); }
     .xd .part { transform: translate(var(--ax), var(--ay)); }
     .xd.exploded .part { transform: translate(var(--ex), var(--ey)); transition-delay: var(--d); }
-    .xd .assy { animation: xd-float 7s ease-in-out infinite; }
-    @keyframes xd-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
     .xd .lbl { opacity: 0; transition: opacity .5s ease; transition-delay: 0s; }
     .xd.exploded .lbl { opacity: 1; transition-delay: calc(1.5s + var(--i) * .12s); }
     .xd .lbl polyline { stroke-dasharray: 260; stroke-dashoffset: 260; transition: stroke-dashoffset .8s ease; }
@@ -125,8 +123,7 @@
     @keyframes xd-rot { to { transform: rotate(360deg) } }
     .xd .fil { stroke-dasharray: 6 10; animation: xd-flow 1.2s linear infinite; }
     @keyframes xd-flow { to { stroke-dashoffset: -32 } }
-    .xd .state { transition: opacity .4s; }
-    @media (prefers-reduced-motion: reduce) { .xd .assy, .xd .xd-rotor, .xd .fil { animation: none } }
+    @media (prefers-reduced-motion: reduce) { .xd .xd-rotor, .xd .fil { animation: none } }
   `;
 
   const DEFS = `
@@ -137,7 +134,6 @@
     <linearGradient id="xd-blockL" x1="0" x2="1"><stop offset="0" stop-color="#7e858e"/><stop offset="1" stop-color="#a7aeb6"/></linearGradient>
     <linearGradient id="xd-blockR" x1="0" x2="1"><stop offset="0" stop-color="#bcc2c9"/><stop offset="1" stop-color="#9097a0"/></linearGradient>
     <linearGradient id="xd-rod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eceef1"/><stop offset=".5" stop-color="#a9afb7"/><stop offset="1" stop-color="#6c727a"/></linearGradient>
-    <radialGradient id="xd-shadow"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
   `;
 
   function build() {
@@ -155,14 +151,9 @@
       </g>`;
     }).join("");
 
-    return `<svg class="xd" viewBox="0 0 900 780" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated exploded view of a 3D printer hotend">
+    return `<svg class="xd" viewBox="0 0 900 740" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated exploded view of a 3D printer hotend">
       <style>${CSS}</style>
       <defs>${DEFS}</defs>
-      <g font-family="Inter, sans-serif">
-        <text x="40" y="760" fill="#5d636c" font-size="12" letter-spacing="3">FIG. 01 — FDM HOTEND ASSEMBLY</text>
-        <text class="state" x="860" y="760" text-anchor="end" fill="#cfb87c" font-size="12" font-weight="700" letter-spacing="3">ASSEMBLED</text>
-      </g>
-      <ellipse cx="${CX}" cy="745" rx="170" ry="22" fill="url(#xd-shadow)" opacity=".7"/>
       <g class="assy">
         <line class="fil" x1="${CX}" y1="0" x2="${CX}" y2="200" stroke="#cfb87c" stroke-width="3" stroke-linecap="round"/>
         ${parts}
@@ -178,16 +169,15 @@
   function mount(container, opts = {}) {
     container.insertAdjacentHTML("beforeend", build());
     const svg = container.lastElementChild;
-    const state = svg.querySelector(".state");
     const hold = (opts.holdSeconds || 6.5) * 1000;
     const rest = (opts.restSeconds || 2.8) * 1000;
     let timer;
     const explode = () => {
-      svg.classList.add("exploded"); state.textContent = "EXPLODED VIEW";
+      svg.classList.add("exploded");
       timer = setTimeout(collapse, hold);
     };
     const collapse = () => {
-      svg.classList.remove("exploded"); state.textContent = "ASSEMBLED";
+      svg.classList.remove("exploded");
       timer = setTimeout(explode, rest);
     };
     timer = setTimeout(explode, (opts.startDelay ?? 1.2) * 1000);

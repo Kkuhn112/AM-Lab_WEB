@@ -1,44 +1,41 @@
-# CU Denver — Additive Manufacturing Lab Display
+# Lynx AM Lab Display — CU Denver Mechanical Engineering
 
 A website for the AM Lab that works in two ways:
 
-- **Lab display (Raspberry Pi + TV):** a full-screen split layout. The left half shows lab hours with a live open/closed status, the print-request QR code, and the printers. The right half plays exploded views, 3D models, videos and images.
+- **Lab display (Raspberry Pi + TV):** a full-screen split layout. One half shows the weekly hours timetable with a live open/closed line, the print-request QR code, and the printers. The other half plays exploded views, 3D models, videos and images.
 - **Public website (GitHub Pages):** the same page. On phones and narrow windows it becomes a normal scrolling site.
 
 It is plain HTML, CSS and JS with no build step. All libraries and fonts are vendored, so it runs **fully offline** on the Pi.
 
 ```
 index.html            page structure
-js/config.js          ← EDIT THIS: hours, QR link, printers, media playlist, notices
+js/config.js          ← EDIT THIS: hours, QR link, printers, media playlist
 js/app.js             clock, hours logic, QR, printer grid, media player
 js/exploded-demo.js   built-in animated SVG exploded view (hotend)
 css/styles.css        styles
 assets/printers/      printer photos
 assets/media/         animations: .glb / .mp4 / .webm / images
 kiosk/                Raspberry Pi kiosk scripts
-vendor/, fonts/       model-viewer (Apache-2.0), qrcode-generator (MIT), Inter + Barlow Condensed (OFL)
+assets/brand/         lab + CU Denver logos
+vendor/, fonts/       model-viewer (Apache-2.0), qrcode-generator (MIT), Inter (OFL)
 ```
 
 ## 1. Make it yours (edit `js/config.js`)
 
 | What | Where in config |
 |---|---|
-| **Print form link**. The QR code is generated from it automatically. | `printForm.url` (currently a placeholder) |
-| Weekly hours and holiday closures | `hours.weekly`, `hours.exceptions` |
-| Printers: name, tech, build volume, materials, status | `printers` (the current entries are **samples**; replace them with the lab's real machines) |
-| Right-half playlist | `media` |
-| Bottom ticker notices | `announcements` |
-| Room, email, logo | `lab` |
+| **Print form link**. The QR code is generated from it automatically. | `printForm.url` (**still a placeholder**) |
+| Weekly hours, timetable span, holiday closures | `hours.weekly`, `hours.gridStart/gridEnd`, `hours.exceptions` |
+| Printers: name, count, build volume, short note | `printers` |
+| Right/top-half playlist | `media` |
+| Location, email, logos | `lab` |
 
 All times use the lab's timezone (`America/Denver`), so the open/closed status is correct no matter where the page is viewed from.
 
 ### Printer photos
-Put photos in `assets/printers/` and point each printer's `image` to its file. For a professional look:
-- Use **landscape** photos, about 1600×1200 px, in JPG or WebP format.
-- Shoot against a plain, neutral backdrop with the machine centred and nothing in the lower third (the name and specs are overlaid there).
-- Use the same angle and lighting for every machine so the grid looks consistent.
+Photos are square JPGs on a white background in `assets/printers/`. The current ones come from the lab's existing site. To add one (e.g. the Fiber Seeker), crop the machine tightly, then centre it on a white square of about 1000×1000 px with a small margin. Point the printer's `image` to the file.
 
-Until a photo is added, the card shows a "photo coming soon" placeholder. In kiosk mode six printers are shown at once. If the lab has more, the grid pages through them automatically (`printersPerPage`).
+On 16:9 screens with an odd number of printers, the first printer gets a large feature tile and the rest fill a 2-row grid beside it. On 9:16 screens they sit in one row.
 
 ## 2. Animations on the right half
 
