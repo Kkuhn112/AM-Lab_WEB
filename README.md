@@ -66,7 +66,7 @@ Use **←/→** on a keyboard to step through slides while previewing.
 ## 3. Publish on GitHub Pages
 1. Open repo **Settings → Pages** and choose *Deploy from a branch*. Set the branch to `main` and the folder to `/ (root)`.
 2. The site will be live at `https://<user>.github.io/<repo>/`.
-3. Add `?mode=kiosk` to force the split TV layout, or `?mode=web` to force the stacked layout.
+3. Add `?mode=kiosk` to force the TV layout, or `?mode=web` to force the normal scrolling page. Add `&orient=portrait` to preview the 9:16 layout.
 
 ## 4. Raspberry Pi display
 Use a Pi 4 or 5 running Raspberry Pi OS (desktop), connected to a 1080p or 4K TV.
@@ -87,6 +87,13 @@ On boot, the Pi does the following:
 - Serves the folder on `127.0.0.1:8080`. This is needed because browsers block loading 3D `.glb` files straight from disk.
 - Opens Chromium full-screen in kiosk mode with the cursor hidden.
 - Runs `git pull` every 10 minutes. The page reloads every hour (`kiosk.reloadMinutes`), so anything pushed to GitHub shows up on the TV automatically.
+
+### Portrait (9:16) screens
+The layout follows the screen's orientation automatically:
+- **Portrait (9:16, e.g. 1080×1920):** animations fill the **top half**; hours, QR and printers fill the bottom half.
+- **Landscape (16:9):** animations fill the right half; everything else is on the left.
+
+To use a TV mounted on its side, rotate the Pi's output so that Chromium sees a tall screen. Open **Menu → Preferences → Screen Configuration**, right-click the display and choose **Orientation → Right** (or Left). To force a layout regardless of the screen, add `&orient=portrait` or `&orient=landscape` to the URL in `kiosk/start-kiosk.sh`.
 
 Also set **raspi-config → Display → Screen Blanking → Off**, and set **Auto Login** to Desktop.
 

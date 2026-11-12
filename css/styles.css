@@ -154,6 +154,7 @@ html.split .top-row { grid-template-columns: 1.25fr 1fr; gap: 1.4rem; }
 }
 .week li .d { font-weight: 600; width: 3.2rem; color: var(--ink-2); }
 .week li .h { color: var(--ink-2); text-align: right; }
+.week li .r + .r::before { content: ", "; }
 .week li.closed .h { color: var(--ink-3); }
 .week li .x { font-size: .78em; color: var(--maint); font-weight: 600; margin-left: .5rem; }
 .week li.today { background: var(--ink); color: #fff; }
@@ -353,6 +354,48 @@ html:not(.split) .ticker { flex-wrap: wrap; }
   html:not(.split) .top-row { grid-template-columns: 1.25fr 1fr; }
   html:not(.split) .clock { display: block; }
 }
+
+/* ---------------- Portrait (9:16) kiosk ----------------
+   Stage on the top half, information on the bottom half.
+   Everything scales with screen height (16px ≈ 1080×1920).        */
+html.split.portrait { font-size: clamp(9px, 0.8vh, 36px); }
+html.split.portrait .layout { flex-direction: column; }
+html.split.portrait .stage { order: -1; width: 100%; height: 50vh; }
+html.split.portrait .info {
+  width: 100%; height: 50vh; padding: 2rem 2.8rem 1.3rem; gap: 1.3rem;
+}
+html.split.portrait .masthead { padding-bottom: 1rem; }
+html.split.portrait .brand-name { font-size: 3.1rem; }
+html.split.portrait .top-row { grid-template-columns: 1.75fr 1fr; gap: 1.3rem; }
+
+/* Hours become a 7-day strip to save height */
+html.split.portrait .week { grid-template-columns: repeat(7, 1fr); gap: .35rem; }
+html.split.portrait .week li {
+  flex-direction: column; align-items: center; justify-content: flex-start; gap: .3rem;
+  padding: .55rem .2rem .6rem; text-align: center; background: #f6f5f1; border-radius: .55rem;
+}
+html.split.portrait .week li .d { width: auto; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; }
+html.split.portrait .week li.today { background: var(--ink); }
+html.split.portrait .week li.today .d::after { display: none; }
+html.split.portrait .week li .h { text-align: center; font-size: .85rem; line-height: 1.25; font-weight: 600; }
+html.split.portrait .week li .t { display: block; }
+html.split.portrait .week li .sep { display: none; }
+html.split.portrait .week li .t + .t::before { content: ""; display: block; width: .7rem; height: 1px; background: currentColor; opacity: .35; margin: .22rem auto; }
+html.split.portrait .week li .r + .r::before { content: ""; display: block; height: .3rem; }
+html.split.portrait .week li .x { display: block; margin: .2rem 0 0; font-size: .65rem; }
+html.split.portrait .status-sub { margin: .5rem 0 .8rem; }
+
+/* QR: code left, text right — keeps the top row short */
+html.split.portrait .top-row { grid-template-columns: 1.55fr 1fr; }
+html.split.portrait .qr { flex-direction: row; align-items: center; gap: 1rem; }
+html.split.portrait .qr-link { flex: 0 0 50%; }
+html.split.portrait .qr-frame { width: 100%; padding: .55rem; }
+html.split.portrait .qr-title { font-size: 1.3rem; }
+html.split.portrait .qr-blurb { font-size: .78rem; }
+html.split.portrait .qr-url { font-size: .74rem; }
+
+html.split.portrait .stage-caption { padding: 5rem 3rem 3.2rem; }
+html.split.portrait .stage-title { font-size: 3.2rem; }
 
 @media (prefers-reduced-motion: reduce) {
   .slide > img { animation: none; }

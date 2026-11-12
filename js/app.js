@@ -18,9 +18,14 @@
     root.classList.add("kiosk");
     if (C.kiosk?.hideCursor !== false) root.classList.add("hide-cursor");
   }
+  // Orientation: auto-detected, or force with ?orient=portrait | landscape
+  const orient = params.get("orient");
   function applyMode() {
     const wide = innerWidth >= 1100 && innerWidth / innerHeight >= 1.25;
-    root.classList.toggle("split", forced === "kiosk" || (forced !== "web" && wide));
+    const tall = innerHeight / innerWidth >= 1.4 && (forced === "kiosk" || innerWidth >= 900);
+    const portrait = forced !== "web" && orient !== "landscape" && (orient === "portrait" || tall);
+    root.classList.toggle("portrait", portrait);
+    root.classList.toggle("split", portrait || forced === "kiosk" || (forced !== "web" && wide));
   }
   applyMode();
   addEventListener("resize", () => { applyMode(); layoutPrinters(); });
@@ -59,7 +64,9 @@
     const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12;
     return m ? `${h}:${String(m).padStart(2, "0")} ${ap}` : `${h} ${ap}`;
   }
-  const fmtRange = (r) => r.map(([a, b]) => `${fmt(a)} – ${fmt(b)}`).join(", ");
+  // Each time in its own span so portrait mode can stack open/close vertically
+  const fmtRangeHTML = (r) => r.map(([a, b]) =>
+    `<span class="r"><span class="t">${fmt(a)}</span><span class="sep"> – </span><span class="t">${fmt(b)}</span></span>`).join("");
 
   /* ---------------- Clock ---------------- */
   function tickClock() {
@@ -103,7 +110,7 @@
       if (!di.ranges.length) li.classList.add("closed");
       const label = di.ex ? `<span class="x">${esc(di.ex.label)}</span>` : "";
       li.innerHTML = `<span class="d">${DAY_NAMES[di.dow].slice(0, 3)}</span>` +
-        `<span class="h">${di.ranges.length ? fmtRange(di.ranges) : "Closed"}${label}</span>`;
+        `<span class="h">${di.ranges.length ? fmtRangeHTML(di.ranges) : "Closed"}${label}</span>`;
       list.appendChild(li);
     }
     $("hoursNote").textContent = C.hours.note || "";
