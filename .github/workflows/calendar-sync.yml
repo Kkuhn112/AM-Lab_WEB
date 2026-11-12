@@ -1,0 +1,54 @@
+# Keeps data/schedule.js in sync with the lab-hours Google Calendar.
+# Setup: CALENDAR.md  (needs the repository secret GCAL_ICS_URL)
+name: Sync lab hours from Google Calendar
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"     # every 15 min (GitHub may run it a few minutes late)
+  workflow_dispatch:            # "Run workflow" button for an immediate update
+  push:
+    paths:
+      - tools/gcal_to_schedule.py
+      - .github/workflows/calendar-sync.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: calendar-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install --quiet icalendar recurring-ical-events
+
+      - name: Build data/schedule.js from the calendar
+        env:
+          GCAL_ICS_URL: ${{ secrets.GCAL_ICS_URL }}
+        run: |
+          if [ -z "$GCAL_ICS_URL" ]; then
+            echo "::notice::GCAL_ICS_URL secret not set — skipping (see CALENDAR.md)."
+            exit 0
+          fi
+          python3 tools/gcal_to_schedule.py
+
+      - name: Commit if the schedule changed
+        run: |
+          if git diff --quiet -- data/schedule.js; then
+            echo "No change."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/schedule.js
+          git commit -m "Update lab hours from Google Calendar"
+          git push

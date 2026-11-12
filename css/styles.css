@@ -20,7 +20,7 @@
   --paper: #ffffff;
   --gold: #cfb87c;        /* CU gold */
   --gold-ink: #8a6d2a;    /* gold dark enough for text/lines on white */
-  --stage: #0b0b0c;
+  --stage: #0b0b0c;      /* = media standard background #0B0B0C */
   --font: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -107,6 +107,11 @@ html.split .timetable { height: 15.5rem; }
   overflow: hidden;
 }
 .tt-block.past { background: #e9e1c8; color: var(--ink-2); }
+.tt-closed {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: .74rem; font-weight: 600; color: var(--ink-3);
+  writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: .04em;
+}
 .tt-now {
   position: absolute; left: -.2rem; right: -.2rem; height: 2px; background: var(--ink); z-index: 2;
 }
@@ -179,8 +184,12 @@ html.split:not(.portrait) .printer-grid.feature .printer:not(:first-child) .prin
 .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; display: flex; align-items: center; justify-content: center; }
 .slide.active { opacity: 1; }
 .slide > video, .slide > img, .slide > iframe, .slide > model-viewer, .slide > svg { width: 100%; height: 100%; border: 0; }
-.slide > video, .slide > img { object-fit: cover; }
-.slide > img { animation: drift 16s ease-in-out both; }
+/* Media standard: square 1080×1080 on #0B0B0C, shown whole ("contain") so
+   nothing is ever cropped; letterbox space blends into the stage colour.
+   fit: "cover" fills edge to edge instead. See media/README.md.          */
+.slide > video, .slide > img { object-fit: contain; background: var(--stage); }
+.slide.fit-cover > video, .slide.fit-cover > img { object-fit: cover; }
+.slide.fit-cover > img { animation: drift 16s ease-in-out both; }
 .slide > model-viewer { background: transparent; --poster-color: transparent; --progress-bar-color: var(--gold); }
 .slide.has-caption > model-viewer, .slide.has-caption > svg { height: 80%; margin-bottom: 20%; }
 @keyframes drift { from { transform: scale(1.03); } to { transform: scale(1.1); } }

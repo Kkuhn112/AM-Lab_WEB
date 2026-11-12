@@ -24,13 +24,16 @@ window.LAB_CONFIG = {
     qrImage: ""                     // optional: use your own QR image instead
   },
 
-  /* Hours — 24h "HH:MM", lab timezone. Several ranges per day allowed.
-     gridStart/gridEnd set the visible span of the timetable.          */
+  /* Hours
+     If a Google Calendar is connected (see CALENDAR.md), the timetable is
+     drawn from that calendar and `weekly` below is only a fallback for
+     dates the calendar data doesn't cover.
+     Times are 24h "HH:MM" in the lab timezone.                         */
   hours: {
     timezone: "America/Denver",
-    gridStart: "09:00",
-    gridEnd: "17:00",
-    days: ["mon", "tue", "wed", "thu", "fri"],   // columns shown
+    gridStart: "09:00",          // timetable shows this span
+    gridEnd: "17:00",            //   (widens automatically if an event falls outside it)
+    days: ["mon", "tue", "wed", "thu", "fri"],   // columns always shown; Sat/Sun appear if they have hours
     weekly: {
       mon: [["10:30", "12:00"]],
       tue: [["14:00", "17:00"]],
@@ -40,7 +43,7 @@ window.LAB_CONFIG = {
       sat: [],
       sun: []
     },
-    // Closures / special hours, e.g. { date: "2026-11-26", label: "Thanksgiving", hours: [] }
+    // Fallback-only closures, e.g. { date: "2026-11-26", label: "Thanksgiving", hours: [] }
     exceptions: []
   },
 
@@ -83,28 +86,8 @@ window.LAB_CONFIG = {
     }
   ],
 
-  /* Right / top half — plays in order, then loops.
-     types: "exploded-demo" | "model" (.glb) | "video" | "image" | "iframe"
-     fields: title, caption, duration (s). Missing files are skipped.  */
-  media: [
-    {
-      type: "exploded-demo",
-      title: "Inside an FDM hotend",
-      caption: "Filament passes through the heat break into the heater block, melts, and leaves through the nozzle.",
-      duration: 16
-    },
-    {
-      type: "model",
-      src: "assets/media/hotend-assembly.glb",
-      title: "Hotend assembly",
-      caption: "Exploded-view animations exported from CAD play here in 3D.",
-      duration: 18,
-      cameraOrbit: "120deg 72deg 100%",
-      autoRotate: true
-    }
-    // { type: "video", src: "assets/media/gearbox.mp4", title: "Planetary gearbox" },
-    // { type: "image", src: "assets/media/part.jpg", title: "Student project", duration: 10 },
-  ],
+  /* The dynamic half of the screen is NOT configured here —
+     edit media/playlist.js (see media/README.md).                    */
 
   kiosk: {
     reloadMinutes: 60,   // reload so pulled changes appear (0 = never)

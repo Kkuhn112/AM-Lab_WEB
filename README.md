@@ -8,15 +8,15 @@ A website for the AM Lab that works in two ways:
 It is plain HTML, CSS and JS with no build step. All libraries and fonts are vendored, so it runs **fully offline** on the Pi.
 
 ```
-index.html            page structure
-js/config.js          ← EDIT THIS: hours, QR link, printers, media playlist
-js/app.js             clock, hours logic, QR, printer grid, media player
-js/exploded-demo.js   built-in animated SVG exploded view (hotend)
-css/styles.css        styles
-assets/printers/      printer photos
-assets/media/         animations: .glb / .mp4 / .webm / images
+media/playlist.js     ← EDIT THIS to change what plays on the screen (see media/README.md)
+media/                videos, images, 3D models + the video standard, guides, convert.sh
+js/config.js          ← EDIT THIS for the QR link, printers, fallback hours
+CALENDAR.md           drive the hours timetable from a Google Calendar
+data/schedule.js      generated from the calendar by .github/workflows/calendar-sync.yml
+tools/                gcal_to_schedule.py (calendar → data/schedule.js)
+index.html, js/, css/ the page itself
+assets/               printer photos, logos
 kiosk/                Raspberry Pi kiosk scripts
-assets/brand/         lab + CU Denver logos
 vendor/, fonts/       model-viewer (Apache-2.0), qrcode-generator (MIT), Inter (OFL)
 ```
 
@@ -25,9 +25,8 @@ vendor/, fonts/       model-viewer (Apache-2.0), qrcode-generator (MIT), Inter (
 | What | Where in config |
 |---|---|
 | **Print form link**. The QR code is generated from it automatically. | `printForm.url` (**still a placeholder**) |
-| Weekly hours, timetable span, holiday closures | `hours.weekly`, `hours.gridStart/gridEnd`, `hours.exceptions` |
+| Hours: use a **Google Calendar** ([CALENDAR.md](CALENDAR.md)), or fixed weekly hours | `hours.weekly`, `hours.gridStart/gridEnd` |
 | Printers: name, count, build volume, short note | `printers` |
-| Right/top-half playlist | `media` |
 | Location, email, logos | `lab` |
 
 All times use the lab's timezone (`America/Denver`), so the open/closed status is correct no matter where the page is viewed from.
@@ -37,28 +36,11 @@ Photos are square JPGs on a white background in `assets/printers/`. The current 
 
 On 16:9 screens with an odd number of printers, the first printer gets a large feature tile and the rest fill a 2-row grid beside it. On 9:16 screens they sit in one row.
 
-## 2. Animations on the right half
+## 2. The dynamic half (videos, exploded views, anything)
 
-Each item in `media` plays in order, then the playlist loops. Items whose file is missing are skipped.
+It is edited in one place, **[`media/playlist.js`](media/playlist.js)**, which is separate from the rest of the site. Drop a file into `media/` and add one line to the playlist. It can be a video, image, `.glb` 3D model, HTML animation or YouTube link.
 
-| `type` | Use for | Notes |
-|---|---|---|
-| `exploded-demo` | Built-in hotend exploded view | Needs no files. Lightweight SVG. |
-| `model` | **Exploded-view animations from CAD** | A `.glb` file. Its first animation autoplays and the model slowly turntables. |
-| `video` | Rendered animations, timelapses | Use `.mp4` (H.264) or `.webm`. Plays muted and advances when it ends. |
-| `image` | Featured prints | Slow Ken Burns pan. |
-| `iframe` | Any custom HTML animation | Use a local file in `assets/media/`. |
-
-**Getting exploded views out of CAD**
-- **Fusion:** animate the explode in the *Animation* workspace, then publish a video (**`video`**). Alternatively, export the model to Blender and animate it there.
-- **SolidWorks:** use *Exploded View* plus an *Animation Wizard* (Explode). Then save it as an MP4, or export it as glTF with an add-in.
-- **Blender:** keyframe each part's location, then use *File → Export → glTF 2.0 (.glb)* with *Animation* ticked.
-- **Tip for `.glb`:** save the file with the parts in their **exploded** positions, so the camera frames the whole explode. If parts fly off-screen, increase the 3rd value of `cameraOrbit`, e.g. `"120deg 72deg 140%"`.
-- **Raspberry Pi tip:** keep videos at 1080p and under about 20 Mbps, and keep `.glb` files under about 20 MB.
-
-`assets/media/hotend-assembly.glb` is a sample animated assembly that shows the `model` type working.
-
-Use **←/→** on a keyboard to step through slides while previewing.
+**Video standard:** 1080 × 1080 square, MP4 (H.264), 30 fps, background #0B0B0C. Keep 60 px clear around the edges, and keep the bottom 25 % clear when the slide has a title. `media/convert.sh` turns any video into this format. Full details, editor guides and CAD export tips are in **[media/README.md](media/README.md)**.
 
 ## 3. Publish on GitHub Pages
 1. Open repo **Settings → Pages** and choose *Deploy from a branch*. Set the branch to `main` and the folder to `/ (root)`.

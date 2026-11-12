@@ -52,13 +52,33 @@
     const y = +p.year, m = +p.month, d = +p.day;
     return { y, m, d, mins: +p.hour * 60 + +p.minute, dow: new Date(Date.UTC(y, m - 1, d)).getUTCDay() };
   }
+  // Hours for one calendar day. Google Calendar data (data/schedule.js)
+  // wins for dates it covers; otherwise fall back to config.js `weekly`.
   function dayInfo(now, offset) {
     const dt = new Date(Date.UTC(now.y, now.m - 1, now.d + offset));
     const iso = dt.toISOString().slice(0, 10);
     const dow = dt.getUTCDay();
-    const ex = (C.hours.exceptions || []).find((e) => e.date === iso);
-    const ranges = ((ex ? ex.hours : C.hours.weekly[DAYS[dow]]) || []).map(([a, b]) => [toMin(a), toMin(b)]);
-    return { iso, dow, date: dt.getUTCDate(), month: dt.getUTCMonth(), ex, ranges };
+    const S = window.LAB_SCHEDULE;
+    let ex = null, raw;
+    if (S && S.days && iso >= S.from && iso <= S.to) {
+      const d = S.days[iso] || {};
+      if (d.closed) ex = { label: d.closed === true ? "" : d.closed };
+      raw = d.closed ? [] : (d.open || []);
+    } else {
+      ex = (C.hours.exceptions || []).find((e) => e.date === iso) || null;
+      raw = (ex ? ex.hours : C.hours.weekly[DAYS[dow]]) || [];
+    }
+    return { iso, dow, date: dt.getUTCDate(), month: dt.getUTCMonth(), ex, ranges: raw.map(([a, b]) => [toMin(a), toMin(b)]) };
+  }
+
+  // Re-read data/schedule.js every few minutes so calendar edits show up
+  // without a page reload. A <script> tag works over file:// too.
+  function refreshSchedule() {
+    const tag = document.createElement("script");
+    tag.src = "data/schedule.js?t=" + Date.now();
+    tag.onload = () => { tag.remove(); renderHours(); };
+    tag.onerror = () => tag.remove();
+    document.head.appendChild(tag);
   }
   function fmt(mins, withPeriod = true) {
     let h = Math.floor(mins / 60) % 24; const m = mins % 60;
@@ -87,41 +107,48 @@
       ? `<b>Open now</b> until ${fmt(cur[1])}`
       : `<b>Closed</b>${nextOpening(now) ? " · opens " + nextOpening(now) : ""}`;
 
-    // Timetable for this week's configured days
-    const days = C.hours.days || ["mon", "tue", "wed", "thu", "fri"];
-    const g0 = toMin(C.hours.gridStart || "09:00"), g1 = toMin(C.hours.gridEnd || "17:00");
-    const span = g1 - g0, rows = Math.round(span / 60);
+    // This week (Mon–Sun). Configured days always show; others only if they have hours.
     const mondayOffset = -((now.dow + 6) % 7);
+    const base = C.hours.days || ["mon", "tue", "wed", "thu", "fri"];
+    const week = [1, 2, 3, 4, 5, 6, 0].map((idx, k) => ({ idx, off: mondayOffset + k, di: dayInfo(now, mondayOffset + k) }))
+      .filter(({ idx, di }) => base.includes(DAYS[idx]) || di.ranges.length);
+
+    // Visible span: config grid, widened to whole hours if an event falls outside it.
+    let g0 = toMin(C.hours.gridStart || "09:00"), g1 = toMin(C.hours.gridEnd || "17:00");
+    week.forEach(({ di }) => di.ranges.forEach(([a, b]) => {
+      g0 = Math.min(g0, Math.floor(a / 60) * 60); g1 = Math.max(g1, Math.ceil(b / 60) * 60);
+    }));
+    const span = g1 - g0, rows = Math.round(span / 60);
     const pct = (m) => ((Math.min(Math.max(m, g0), g1) - g0) / span) * 100;
 
     let head = `<div></div>`, axis = "", cols = "";
-    for (let h = 0; h <= rows; h++) {
+    for (let h = 0; h < rows; h++) {
       const m = g0 + h * 60;
-      if (h < rows) axis += `<span style="top:${pct(m)}%">${fmt(m, false).replace(":00", "")}${h === 0 || m === 720 ? (m < 720 ? " am" : " pm") : ""}</span>`;
+      axis += `<span style="top:${pct(m)}%">${fmt(m, false).replace(":00", "")}${h === 0 || m === 720 ? (m < 720 ? " am" : " pm") : ""}</span>`;
     }
     const closures = [];
-    days.forEach((key) => {
-      const idx = DAYS.indexOf(key);
-      const off = mondayOffset + ((idx + 6) % 7);
-      const di = dayInfo(now, off);
+    week.forEach(({ idx, off, di }) => {
       const isToday = off === 0;
       head += `<div class="tt-day${isToday ? " today" : ""}">${DAY_NAMES[idx].slice(0, 3)}<span>${di.date}</span></div>`;
       let blocks = di.ranges.map(([a, b]) => {
         const past = off < 0 || (isToday && now.mins >= b);
         return `<div class="tt-block${past ? " past" : ""}" style="top:${pct(a)}%;height:${pct(b) - pct(a)}%">${fmt(a, false)}–${fmt(b, false)}</div>`;
       }).join("");
+      if (di.ex && !di.ranges.length) {
+        blocks += `<div class="tt-closed">Closed</div>`;
+        closures.push(`${DAY_NAMES[idx]} ${di.month + 1}/${di.date}${di.ex.label ? ": " + esc(di.ex.label) : ""}`);
+      }
       if (isToday && now.mins >= g0 && now.mins <= g1) blocks += `<div class="tt-now" style="top:${pct(now.mins)}%"></div>`;
       cols += `<div class="tt-col${isToday ? " today" : ""}">${blocks}</div>`;
-      if (di.ex && !di.ranges.length) closures.push(`${DAY_NAMES[idx]} ${di.month + 1}/${di.date} closed${di.ex.label ? " — " + di.ex.label : ""}`);
     });
     const tt = $("timetable");
-    tt.style.setProperty("--cols", days.length);
+    tt.style.setProperty("--cols", week.length);
     tt.style.setProperty("--rows", rows);
     tt.innerHTML = head + `<div class="tt-axis">${axis}</div>` + cols;
-    $("closures").textContent = closures.join(" · ");
+    $("closures").innerHTML = closures.length ? "Closed " + closures.join(" · ") : "";
   }
   function nextOpening(now) {
-    for (let i = 0; i < 21; i++) {
+    for (let i = 0; i < 42; i++) {
       const di = dayInfo(now, i);
       const r = di.ranges.find(([a]) => i > 0 || a > now.mins);
       if (r) return `${i === 0 ? "today" : i === 1 ? "tomorrow" : DAY_NAMES[di.dow]} at ${fmt(r[0])}`;
@@ -171,10 +198,35 @@
     grid.style.setProperty("--fc", 1 + (list.length - 1) / 2);
   }
 
+  /* ---------------- Playlist (media/playlist.js) ----------------
+     Turns a simple { file, title, caption, seconds, fit, orbit } line into
+     the player's internal shape. Type comes from the file extension.     */
+  function normalize(e) {
+    if (!e || e.skip) return null;
+    if (e.type && e.src) return e;                       // legacy config.js format
+    const f = String(e.file || "").trim();
+    if (!f) return null;
+    const base = { title: e.title, caption: e.caption, duration: e.seconds, fit: e.fit || "contain" };
+    if (f === "builtin:hotend") return { ...base, type: "exploded-demo" };
+    const yt = f.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+    if (yt) return { ...base, type: "youtube", id: yt[1], duration: e.seconds || 30 };
+    const src = /^(https?:)?\/\/|^\//.test(f) ? f : "media/" + f;
+    const ext = (f.split("?")[0].split(".").pop() || "").toLowerCase();
+    const type = { mp4: "video", webm: "video", mov: "video", m4v: "video",
+      jpg: "image", jpeg: "image", png: "image", webp: "image", gif: "image", avif: "image",
+      glb: "model", gltf: "model", html: "iframe", htm: "iframe" }[ext];
+    if (!type) { console.warn("[AM Lab] unknown file type in playlist:", f); return null; }
+    const out = { ...base, type, src };
+    if (type === "image" && !out.duration) out.duration = 10;
+    if (type === "iframe" && !out.duration) out.duration = 15;
+    if (type === "model") { out.cameraOrbit = e.orbit; out.autoRotate = e.rotate !== false; out.animation = e.animation; }
+    return out;
+  }
+
   /* ---------------- Media player ---------------- */
   const Player = (() => {
     const slidesEl = $("slides"), cap = $("stageCaption"), bar = $("stageProgress");
-    const items = (C.media || []).slice();
+    const items = (window.LAB_PLAYLIST || C.media || []).map(normalize).filter(Boolean);
     let i = -1, current = null, timer = null, failures = 0;
 
     function setCaption(it) {
@@ -193,7 +245,7 @@
 
     function create(it, ready, fail) {
       const s = document.createElement("div");
-      s.className = "slide" + (it.title || it.caption ? " has-caption" : "");
+      s.className = "slide" + (it.title || it.caption ? " has-caption" : "") + (it.fit === "cover" ? " fit-cover" : "");
       let api = { destroy() {} };
       switch (it.type) {
         case "exploded-demo":
@@ -230,6 +282,13 @@
           im.onload = () => ready(); im.onerror = fail;
           im.alt = it.title || ""; im.src = it.src;
           s.appendChild(im); break;
+        }
+        case "youtube": {
+          const f = document.createElement("iframe");
+          f.src = `https://www.youtube-nocookie.com/embed/${it.id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${it.id}&playsinline=1&rel=0&modestbranding=1`;
+          f.allow = "autoplay; encrypted-media"; f.title = it.title || "video";
+          f.onload = () => ready();
+          s.appendChild(f); break;
         }
         case "iframe": {
           const f = document.createElement("iframe");
@@ -287,6 +346,7 @@
   tickClock(); renderHours(); renderQR(); renderPrinters();
   setInterval(tickClock, 1000);
   setInterval(renderHours, 30 * 1000);
+  setInterval(refreshSchedule, 5 * 60 * 1000);
   requestAnimationFrame(() => Player.start());
 
   if (root.classList.contains("kiosk") && C.kiosk?.reloadMinutes > 0) {
