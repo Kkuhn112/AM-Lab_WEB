@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Additive Manufacturing Lab · CU Denver</title>
+  <meta name="description" content="CU Denver Additive Manufacturing Lab — printers, hours, and print request submission.">
+  <meta name="theme-color" content="#0b0c0e">
+  <link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ============ LEFT: information panel ============ -->
+    <main class="info" id="info">
+      <header class="masthead">
+        <div class="brand">
+          <img class="brand-logo" id="brandLogo" alt="" hidden>
+          <div class="brand-text">
+            <p class="brand-uni" id="labUniversity"></p>
+            <h1 class="brand-name" id="labName"></h1>
+            <p class="brand-dept" id="labDept"></p>
+          </div>
+        </div>
+        <div class="clock" aria-live="off">
+          <div class="clock-time" id="clockTime">--:--</div>
+          <div class="clock-date" id="clockDate"></div>
+        </div>
+      </header>
+
+      <section class="top-row">
+        <!-- Hours -->
+        <article class="card hours" aria-labelledby="hoursHeading">
+          <div class="card-head">
+            <h2 id="hoursHeading" class="eyebrow">Lab Hours</h2>
+            <span class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText">—</span></span>
+          </div>
+          <p class="status-sub" id="statusSub"></p>
+          <ol class="week" id="weekList"></ol>
+          <p class="hours-note" id="hoursNote"></p>
+        </article>
+
+        <!-- QR / print request -->
+        <article class="card qr" aria-labelledby="qrHeading">
+          <h2 id="qrHeading" class="eyebrow">Print Requests</h2>
+          <a class="qr-link" id="qrLink" target="_blank" rel="noopener">
+            <div class="qr-frame" id="qrBox" role="img" aria-label="QR code to the print request form"></div>
+          </a>
+          <div class="qr-text">
+            <h3 class="qr-title" id="qrTitle"></h3>
+            <p class="qr-blurb" id="qrBlurb"></p>
+            <a class="qr-url" id="qrUrl" target="_blank" rel="noopener"></a>
+          </div>
+        </article>
+      </section>
+
+      <section class="printers" aria-labelledby="printersHeading">
+        <div class="section-head">
+          <h2 id="printersHeading" class="eyebrow">Our Printers</h2>
+          <div class="legend" aria-hidden="true">
+            <span><i class="s-available"></i>Available</span>
+            <span><i class="s-busy"></i>In use</span>
+            <span><i class="s-maintenance"></i>Maintenance</span>
+          </div>
+          <div class="pager" id="printerPager" aria-hidden="true"></div>
+        </div>
+        <div class="printer-grid" id="printerGrid"></div>
+      </section>
+
+      <footer class="ticker" id="ticker">
+        <span class="ticker-tag">Notice</span>
+        <p class="ticker-text" id="tickerText"></p>
+        <p class="ticker-contact" id="labContact"></p>
+      </footer>
+    </main>
+
+    <!-- ============ RIGHT: dynamic media stage ============ -->
+    <aside class="stage" id="stage" aria-label="Featured animations">
+      <div class="stage-grid" aria-hidden="true"></div>
+      <div class="slides" id="slides"></div>
+      <div class="stage-caption" id="stageCaption">
+        <p class="stage-kicker" id="stageKicker"></p>
+        <h2 class="stage-title" id="stageTitle"></h2>
+        <p class="stage-text" id="stageText"></p>
+      </div>
+      <div class="stage-chrome" aria-hidden="true">
+        <div class="stage-index" id="stageIndex"></div>
+        <div class="stage-progress"><span id="stageProgress"></span></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Plain (non-module) scripts so the page works from file:// on a Pi -->
+  <script src="js/config.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script src="vendor/model-viewer-umd.min.js"></script>
+  <script src="js/exploded-demo.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
