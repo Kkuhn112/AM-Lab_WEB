@@ -12,7 +12,9 @@ Calendar rules (see CALENDAR.md):
                        label, e.g. "Thanksgiving".
 
 Usage
-  GCAL_ICS_URL="https://calendar.google.com/…/basic.ics" python3 tools/gcal_to_schedule.py
+  On the lab Pi this runs automatically (kiosk/update-calendar.sh, every 5 min)
+  with the link stored privately in ~/.config/am-lab/calendar-url.
+  Manual: GCAL_ICS_URL="https://calendar.google.com/…/basic.ics" python3 tools/gcal_to_schedule.py
   python3 tools/gcal_to_schedule.py --ics some-file.ics        (local file, for testing)
 
 Requires:  pip install icalendar recurring-ical-events
@@ -44,8 +46,12 @@ def load_calendar(args):
         sys.exit("No calendar: set GCAL_ICS_URL or pass --ics FILE")
     url = re.sub(r"^webcal://", "https://", url)
     req = urllib.request.Request(url, headers={"User-Agent": "am-lab-display/1.0"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return r.read()
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.read()
+    except Exception as e:  # never echo the (secret) URL into logs
+        reason = getattr(e, "reason", None) or getattr(e, "code", None) or type(e).__name__
+        sys.exit(f"{datetime.now():%Y-%m-%d %H:%M} could not fetch calendar ({reason}); keeping previous schedule")
 
 
 def hm(t: time) -> str:
@@ -126,6 +132,7 @@ def main():
     ap.add_argument("--tz", default="America/Denver")
     ap.add_argument("--today", help="YYYY-MM-DD (testing)")
     ap.add_argument("--out", default=str(OUT))
+    ap.add_argument("--quiet", action="store_true", help="print nothing when the schedule is unchanged")
     args = ap.parse_args()
 
     tz = ZoneInfo(args.tz)
@@ -138,11 +145,12 @@ def main():
             f"window.LAB_SCHEDULE = {body};\n")
     out = Path(args.out)
     if out.exists() and out.read_text(encoding="utf-8") == text:
-        print("schedule unchanged")
+        if not args.quiet:
+            print("schedule unchanged")
         return
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text, encoding="utf-8")
-    print(f"wrote {out} — {len(data['days'])} days with hours or closures")
+    print(f"{datetime.now():%Y-%m-%d %H:%M} wrote {out.name}: {len(data['days'])} days with hours or closures")
 
 
 if __name__ == "__main__":

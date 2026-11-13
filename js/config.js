@@ -25,7 +25,7 @@ window.LAB_CONFIG = {
   },
 
   /* Hours
-     If a Google Calendar is connected (see CALENDAR.md), the timetable is
+     If the lab Pi has a Google Calendar connected (see CALENDAR.md), the timetable is
      drawn from that calendar and `weekly` below is only a fallback for
      dates the calendar data doesn't cover.
      Times are 24h "HH:MM" in the lab timezone.                         */

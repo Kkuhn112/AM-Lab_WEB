@@ -11,9 +11,8 @@ It is plain HTML, CSS and JS with no build step. All libraries and fonts are ven
 media/playlist.js     ← EDIT THIS to change what plays on the screen (see media/README.md)
 media/                videos, images, 3D models + the video standard, guides, convert.sh
 js/config.js          ← EDIT THIS for the QR link, printers, fallback hours
-CALENDAR.md           drive the hours timetable from a Google Calendar
-data/schedule.js      generated from the calendar by .github/workflows/calendar-sync.yml
-tools/                gcal_to_schedule.py (calendar → data/schedule.js)
+CALENDAR.md           drive the hours timetable from a private Google Calendar (on the Pi)
+tools/                gcal_to_schedule.py (calendar → data/schedule.js, generated on the Pi, never committed)
 index.html, js/, css/ the page itself
 assets/               printer photos, logos
 kiosk/                Raspberry Pi kiosk scripts
@@ -25,7 +24,7 @@ vendor/, fonts/       model-viewer (Apache-2.0), qrcode-generator (MIT), Inter (
 | What | Where in config |
 |---|---|
 | **Print form link**. The QR code is generated from it automatically. | `printForm.url` (**still a placeholder**) |
-| Hours: use a **Google Calendar** ([CALENDAR.md](CALENDAR.md)), or fixed weekly hours | `hours.weekly`, `hours.gridStart/gridEnd` |
+| Hours: a private **Google Calendar** read by the Pi ([CALENDAR.md](CALENDAR.md)), or fixed weekly hours | `hours.weekly`, `hours.gridStart/gridEnd` |
 | Printers: name, count, build volume, short note | `printers` |
 | Location, email, logos | `lab` |
 
@@ -42,7 +41,9 @@ It is edited in one place, **[`media/playlist.js`](media/playlist.js)**, which i
 
 **Video standard:** 1080 × 1080 square, MP4 (H.264), 30 fps, background #0B0B0C. Keep 60 px clear around the edges, and keep the bottom 25 % clear when the slide has a title. `media/convert.sh` turns any video into this format. Full details, editor guides and CAD export tips are in **[media/README.md](media/README.md)**.
 
-## 3. Publish on GitHub Pages
+## 3. Publish on GitHub Pages (optional)
+The Pi does not need this. A public copy shows the fixed `hours.weekly` from `js/config.js`, because the calendar is only read on the Pi.
+
 1. Open repo **Settings → Pages** and choose *Deploy from a branch*. Set the branch to `main` and the folder to `/ (root)`.
 2. The site will be live at `https://<user>.github.io/<repo>/`.
 3. Add `?mode=kiosk` to force the TV layout, or `?mode=web` to force the normal scrolling page. Add `&orient=portrait` to preview the 9:16 layout.
@@ -66,6 +67,7 @@ On boot, the Pi does the following:
 - Serves the folder on `127.0.0.1:8080`. This is needed because browsers block loading 3D `.glb` files straight from disk.
 - Opens Chromium full-screen in kiosk mode with the cursor hidden.
 - Runs `git pull` every 10 minutes. The page reloads every hour (`kiosk.reloadMinutes`), so anything pushed to GitHub shows up on the TV automatically.
+- Reads the lab-hours Google Calendar every 5 minutes, if one is connected. `setup-pi.sh` offers to connect it; to connect it later, run `bash kiosk/set-calendar.sh`. The calendar link is stored only on the Pi. See [CALENDAR.md](CALENDAR.md).
 
 ### Portrait (9:16) screens
 The layout follows the screen's orientation automatically:
