@@ -1,2 +1,4 @@
 # Generated on the Pi from the private lab-hours calendar — never commit
 data/schedule.js
+__pycache__/
+*.pyc
