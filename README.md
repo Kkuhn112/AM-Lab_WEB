@@ -35,6 +35,23 @@ Photos are square JPGs on a white background in `assets/printers/`. The current 
 
 On 16:9 screens with an odd number of printers, the first printer gets a large feature tile and the rest fill a 2-row grid beside it. On 9:16 screens they sit in one row.
 
+## Test it on your computer (same as the Pi)
+
+`run-local.py` runs the display the way the Pi does. It serves the folder locally, reads the calendar every 5 minutes if one is connected, and opens kiosk mode in a Chrome/Edge window shaped like the TV. It needs only Python 3.9+ and works on Windows, macOS and Linux.
+
+| Do | Windows | macOS / Linux |
+|---|---|---|
+| Landscape TV (16:9) | double-click `run-local.bat` | double-click `run-local.command`, or `python3 run-local.py` |
+| Portrait TV (9:16) | `run-local.bat --portrait` | `python3 run-local.py --portrait` |
+| Exactly like the Pi (full screen, no cursor) | `--fullscreen` (exit with Alt+F4) | `--fullscreen` (exit with Cmd+Q) |
+| Normal website | `--web` | `--web` |
+| Connect the calendar on this PC | `--set-calendar` | `--set-calendar` |
+
+- Edit `media/playlist.js` or `js/config.js`, then press **F5** in the display window. Use **← / →** to step through slides. Stop with **Ctrl+C** in the terminal.
+- For calendar hours, install the reader once with `python -m pip install icalendar recurring-ical-events`, then run with `--set-calendar`. The link is stored in `~/.config/am-lab/calendar-url` on your PC, never in the repo.
+- The window is a scaled-down TV (1440×810 or 540×960). The layout scales with screen height, so it looks the same as on the 1080p or 4K TV. Use `--size 1920x1080` for full size.
+- If Chrome, Edge or Chromium isn't installed, it opens your default browser instead.
+
 ## 2. The dynamic half (videos, exploded views, anything)
 
 It is edited in one place, **[`media/playlist.js`](media/playlist.js)**, which is separate from the rest of the site. Drop a file into `media/` and add one line to the playlist. It can be a video, image, `.glb` 3D model, HTML animation or YouTube link.

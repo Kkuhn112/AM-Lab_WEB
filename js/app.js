@@ -18,7 +18,7 @@
   const orient = params.get("orient");
   if (mode === "kiosk") {
     root.classList.add("kiosk");
-    if (C.kiosk?.hideCursor !== false) root.classList.add("hide-cursor");
+    if (C.kiosk?.hideCursor !== false && params.get("cursor") !== "show") root.classList.add("hide-cursor");
   }
   function applyMode() {
     const wide = innerWidth >= 1100 && innerWidth / innerHeight >= 1.25;
