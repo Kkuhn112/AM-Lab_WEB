@@ -133,7 +133,12 @@
       : `<b>Closed</b>${nextOpening(now) ? " · opens " + nextOpening(now) : ""}`;
 
     // This week (Mon–Sun). Configured days always show; others only if they have hours.
-    const mondayOffset = -((now.dow + 6) % 7);
+    // On Sat/Sun show the coming week — unless the lab is still open later
+    // today (e.g. a weekend session), in which case keep this week.
+    const weekend = now.dow === 6 || now.dow === 0;
+    const nextWeek = weekend && !today.ranges.some(([, b]) => now.mins < b);
+    const mondayOffset = nextWeek ? (now.dow === 6 ? 2 : 1) : -((now.dow + 6) % 7);
+    $("hoursHeading").textContent = nextWeek ? "Hours · next week" : "Hours";
     const base = C.hours.days || ["mon", "tue", "wed", "thu", "fri"];
     const week = [1, 2, 3, 4, 5, 6, 0].map((idx, k) => ({ idx, off: mondayOffset + k, di: dayInfo(now, mondayOffset + k) }))
       .filter(({ idx, di }) => base.includes(DAYS[idx]) || di.ranges.length);
