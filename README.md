@@ -8,8 +8,8 @@ A website for the AM Lab that works in two ways:
 It is plain HTML, CSS and JS with no build step. All libraries and fonts are vendored, so it runs **fully offline** on the Pi.
 
 ```
-media/playlist.js     ← EDIT THIS to change what plays on the screen (see media/README.md)
-media/                videos, images, 3D models + the video standard, guides, convert.sh
+~/AM-Lab-Media/       ← ON THE PI (not in the repo): drop videos/images/3D models here for the top panel
+media/                the video standard, convert.sh, editor guides, default playlist
 js/config.js          ← EDIT THIS for the QR link, printers, fallback hours
 CALENDAR.md           drive the hours timetable from a private Google Calendar (on the Pi)
 tools/                gcal_to_schedule.py (calendar → data/schedule.js, generated on the Pi, never committed)
@@ -47,16 +47,16 @@ On 16:9 screens with an odd number of printers, the first printer gets a large f
 | Normal website | `--web` | `--web` |
 | Connect the calendar on this PC | `--set-calendar` | `--set-calendar` |
 
-- Edit `media/playlist.js` or `js/config.js`, then press **F5** in the display window. Use **← / →** to step through slides. Stop with **Ctrl+C** in the terminal.
+- Put test media in `AM-Lab-Media` in your home folder (the same as on the Pi). It's picked up within 2 minutes; for `js/config.js` edits, press **F5** in the display window. Use **← / →** to step through slides. Stop with **Ctrl+C** in the terminal.
 - For calendar hours, install the reader once with `python -m pip install icalendar recurring-ical-events`, then run with `--set-calendar`. The link is stored in `~/.config/am-lab/calendar-url` on your PC, never in the repo.
 - Whatever size or shape the window is (a VM, a small laptop screen), the page draws an exact 16:9 or 9:16 TV scaled to fit, with black bars around any leftover space. So the preview is always what the real TV will show. Use `--size 1920x1080` for full size.
 - If Chrome, Edge or Chromium isn't installed, it opens your default browser instead.
 
 ## 2. The dynamic half (videos, exploded views, anything)
 
-It is edited in one place, **[`media/playlist.js`](media/playlist.js)**, which is separate from the rest of the site. Drop a file into `media/` and add one line to the playlist. It can be a video, image, `.glb` 3D model, HTML animation or YouTube link.
+Media is stored **on the Pi**, not on GitHub. Drop files into **`~/AM-Lab-Media`** and they play in filename order, with the filename as the title (`02 Planetary gearbox.mp4` shows as "Planetary gearbox"). An optional same-named `.txt` file adds a caption. The screen picks up changes within 2 minutes. Copy files in with a USB stick, or over the network with WinSCP or `scp`. Add a `playlist.js` to that folder for full control.
 
-**Video standard:** 1080 × 1080 square, MP4 (H.264), 30 fps, background #0B0B0C. Keep 60 px clear around the edges, and keep the bottom 25 % clear when the slide has a title. `media/convert.sh` turns any video into this format. Full details, editor guides and CAD export tips are in **[media/README.md](media/README.md)**.
+**Video standard:** 1080 × 1080 square, MP4 (H.264), 30 fps, background #0B0B0C. Keep 60 px clear around the edges, and keep the bottom 25 % clear for the title. `media/convert.sh` turns any video into this format and saves it straight into `~/AM-Lab-Media`. Full details are in **[media/README.md](media/README.md)**.
 
 ## 3. Publish on GitHub Pages (optional)
 The Pi does not need this. A public copy shows the fixed `hours.weekly` from `js/config.js`, because the calendar is only read on the Pi.

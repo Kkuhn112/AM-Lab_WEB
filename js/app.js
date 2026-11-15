@@ -228,10 +228,17 @@
     grid.style.setProperty("--fc", 1 + (list.length - 1) / 2);
   }
 
-  /* ---------------- Playlist (media/playlist.js) ----------------
-     Turns a simple { file, title, caption, seconds, fit, orbit } line into
-     the player's internal shape. Type comes from the file extension.     */
-  function normalize(e) {
+  /* ---------------- Playlist ----------------
+     Where the top panel's media comes from, first match wins:
+       1. ~/AM-Lab-Media/playlist.js on the machine   (full control)
+       2. ~/AM-Lab-Media/* files, played in name order (just drop files in)
+       3. media/playlist.js in the repo                (default / public site)
+     The local folder is served by run-local.py at local-media/ — on GitHub
+     Pages or file:// it simply isn't there and (3) is used.
+
+     normalize() turns a { file, title, caption, seconds, fit, orbit } line
+     into the player's internal shape. Type comes from the file extension. */
+  function normalize(e, prefix = "media/") {
     if (!e || e.skip) return null;
     if (e.type && e.src) return e;                       // legacy config.js format
     const f = String(e.file || "").trim();
@@ -240,7 +247,7 @@
     if (f === "builtin:hotend") return { ...base, type: "exploded-demo" };
     const yt = f.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
     if (yt) return { ...base, type: "youtube", id: yt[1], duration: e.seconds || 30 };
-    const src = /^(https?:)?\/\/|^\//.test(f) ? f : "media/" + f;
+    const src = /^(https?:)?\/\/|^\//.test(f) ? f : prefix + f.split("/").map(encodeURIComponent).join("/");
     const ext = (f.split("?")[0].split(".").pop() || "").toLowerCase();
     const type = { mp4: "video", webm: "video", mov: "video", m4v: "video",
       jpg: "image", jpeg: "image", png: "image", webp: "image", gif: "image", avif: "image",
@@ -253,10 +260,51 @@
     return out;
   }
 
+  const REPO_PLAYLIST = window.LAB_PLAYLIST || C.media || [];
+  const LOCAL = "local-media/";
+
+  // "02 Planetary_gearbox.mp4" → "Planetary gearbox"
+  const titleFromName = (n) => n.replace(/\.[^.]+$/, "").replace(/^\d+[\s._-]*/, "").replace(/_+/g, " ").trim();
+
+  function loadScript(src) {
+    return new Promise((ok, bad) => {
+      const t = document.createElement("script");
+      t.src = src; t.onload = () => { t.remove(); ok(); }; t.onerror = () => { t.remove(); bad(); };
+      document.head.appendChild(t);
+    });
+  }
+
+  async function loadPlaylist() {
+    try {
+      const r = await fetch(LOCAL + "index.json", { cache: "no-store" });
+      if (r.ok) {
+        const idx = await r.json();
+        if (idx.playlist) {                        // local playlist.js (same format as the repo one)
+          const saved = window.LAB_PLAYLIST;
+          window.LAB_PLAYLIST = undefined;
+          try { await loadScript(LOCAL + "playlist.js?t=" + Date.now()); } catch (e) { /* fall through */ }
+          const list = window.LAB_PLAYLIST;
+          window.LAB_PLAYLIST = saved;
+          if (Array.isArray(list)) {
+            const items = list.map((e) => normalize(e, LOCAL)).filter(Boolean);
+            if (items.length) return items;
+          }
+          console.warn("[AM Lab] local playlist.js is empty or has an error — using the files in the folder");
+        }
+        const files = (idx.files || []).slice()
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+        const items = files.map((f) => normalize({ file: f.name, title: titleFromName(f.name), caption: f.caption }, LOCAL)).filter(Boolean);
+        if (items.length) return items;
+      }
+    } catch (e) { /* no local server (GitHub Pages, file://) */ }
+    return REPO_PLAYLIST.map((e) => normalize(e)).filter(Boolean);
+  }
+  const signature = (items) => JSON.stringify(items.map((x) => [x.src || x.type, x.title, x.caption, x.duration]));
+
   /* ---------------- Media player ---------------- */
   const Player = (() => {
     const slidesEl = $("slides"), cap = $("stageCaption"), bar = $("stageProgress");
-    const items = (window.LAB_PLAYLIST || C.media || []).map(normalize).filter(Boolean);
+    let items = [];
     let i = -1, current = null, timer = null, failures = 0;
 
     function setCaption(it) {
@@ -369,7 +417,16 @@
       if (e.key === "ArrowRight") next();
       if (e.key === "ArrowLeft") show(i - 1);
     });
-    return { start: () => show(0) };
+    // Check the media folder every 2 min; if anything changed, start the new list.
+    async function refresh() {
+      const fresh = await loadPlaylist();
+      if (signature(fresh) === signature(items)) return;
+      items = fresh; failures = 0;
+      show(0);
+    }
+    return {
+      start: async () => { items = await loadPlaylist(); show(0); setInterval(refresh, 2 * 60 * 1000); }
+    };
   })();
 
   /* ---------------- Boot ---------------- */

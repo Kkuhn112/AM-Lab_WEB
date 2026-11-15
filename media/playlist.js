@@ -1,16 +1,14 @@
 /* =====================================================================
-   DISPLAY PLAYLIST — what plays on the dynamic half of the screen.
+   DEFAULT PLAYLIST — what the top panel plays when the machine's local
+   media folder (~/AM-Lab-Media) is empty, and on the public website.
 
-   This is the ONLY file you need to edit to change the display. It is
-   separate from the rest of the website, so nothing you do here can
-   break the hours, printers, or layout.
+   ► Your own videos do NOT go here. Put them in ~/AM-Lab-Media on the
+     Pi (or your PC for testing); they never touch GitHub.
+     See media/README.md.
 
-   HOW TO ADD SOMETHING
-     1. Export your video to the standard in media/README.md
-        (1080 × 1080, MP4, background #0B0B0C). media/convert.sh can do it for you.
-     2. Put the file in this media/ folder.
-     3. Add one line below:  { file: "my-video.mp4", title: "My title" },
-     4. Commit. The lab screen picks it up within about 10 minutes.
+   You can also copy this file into ~/AM-Lab-Media/playlist.js for full
+   control of the local media (order, titles, durations, built-ins);
+   "file" names there refer to files in ~/AM-Lab-Media.
 
    WHAT "file" CAN BE (the type is detected from the extension)
      .mp4 .webm .mov    video. Plays once, then moves on (or set seconds).
@@ -43,8 +41,6 @@ window.LAB_PLAYLIST = [
     seconds: 18,
     orbit: "120deg 72deg 100%" },
 
-  // { file: "gearbox-exploded.mp4", title: "Planetary gearbox", caption: "MECH 4xxx final project" },
-  // { file: "lattice.jpg", title: "Gyroid lattice bracket", seconds: 10 },
-  // { file: "https://youtu.be/VIDEO_ID", title: "Lab tour" },
+  // { file: "https://youtu.be/VIDEO_ID", title: "Lab tour", seconds: 45 },
 
 ];

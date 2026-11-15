@@ -5,6 +5,7 @@ Run the lab display on your own computer, the same way the Raspberry Pi does.
   • serves this folder on http://127.0.0.1:8080 (like kiosk/start-kiosk.sh)
   • reads the lab-hours Google Calendar every 5 min, if connected
     (like kiosk/update-calendar.sh, same private link location)
+  • serves the top-panel media from ~/AM-Lab-Media (on this machine, not GitHub)
   • opens the page in kiosk mode in a Chrome/Edge/Chromium app window
     shaped like the lab TV
 
@@ -25,6 +26,7 @@ import argparse
 import functools
 import getpass
 import http.server
+import json
 import os
 import shutil
 import socketserver
@@ -33,6 +35,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.parse
 import webbrowser
 from pathlib import Path
 
@@ -41,6 +44,30 @@ CONF_DIR = Path(os.environ.get("AMLAB_CONFIG_DIR", Path.home() / ".config" / "am
 URL_FILE = CONF_DIR / "calendar-url"
 CAL_SCRIPT = ROOT / "tools" / "gcal_to_schedule.py"
 CAL_EVERY = 5 * 60
+# Top-panel media lives here, on the machine — not in the repo / on GitHub.
+MEDIA_DIR = Path(os.environ.get("AMLAB_MEDIA_DIR", Path.home() / "AM-Lab-Media"))
+MEDIA_EXT = {".mp4", ".webm", ".mov", ".m4v", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif",
+             ".glb", ".gltf", ".html", ".htm"}
+MEDIA_URL = "/local-media/"
+MEDIA_README = """AM LAB DISPLAY - TOP PANEL MEDIA
+================================
+Everything in this folder plays on the top/right panel of the lab screen.
+
+  * Drop in videos (.mp4), images (.jpg/.png), or 3D models (.glb).
+  * They play in filename order. Start names with numbers to set the order:
+        01 Planetary gearbox.mp4
+        02 Gyroid bracket.jpg
+  * The filename (minus the number) is shown as the title.
+  * For a caption, add a .txt file with the same name:
+        01 Planetary gearbox.txt   ->  "MECH 3xxx final project"
+  * Delete a file to remove it. The screen picks up changes within 2 minutes.
+
+Video standard: 1080 x 1080, MP4 (H.264), background #0B0B0C.
+media/convert.sh in the website repo converts any video to it.
+
+For full control (no title, durations, built-in animations), put a
+playlist.js here - see media/README.md in the website repo.
+"""
 
 
 # ---------------------------------------------------------------- server
@@ -54,6 +81,44 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
+
+    # /local-media/…  → files in MEDIA_DIR (outside the repo)
+    # /local-media/index.json → what's in it, for the player
+    def do_GET(self):
+        if self.path.split("?")[0] == MEDIA_URL + "index.json":
+            return self.send_media_index()
+        return super().do_GET()
+
+    def translate_path(self, path):
+        clean = urllib.parse.unquote(path.split("?", 1)[0].split("#", 1)[0])
+        if not clean.startswith(MEDIA_URL):
+            return super().translate_path(path)
+        parts = [p for p in clean[len(MEDIA_URL):].split("/") if p not in ("", ".", "..")]
+        target = MEDIA_DIR.joinpath(*parts).resolve() if parts else MEDIA_DIR.resolve()
+        base = MEDIA_DIR.resolve()
+        if target != base and base not in target.parents:     # no escaping the folder
+            return str(base / "__forbidden__")
+        return str(target)
+
+    def list_directory(self, path):                            # no folder listings
+        self.send_error(404)
+        return None
+
+    def send_media_index(self):
+        files, has_playlist = [], False
+        if MEDIA_DIR.is_dir():
+            has_playlist = (MEDIA_DIR / "playlist.js").is_file()
+            for f in MEDIA_DIR.iterdir():
+                if f.is_file() and not f.name.startswith((".", "~$")) and f.suffix.lower() in MEDIA_EXT:
+                    cap = f.with_suffix(".txt")
+                    caption = cap.read_text(encoding="utf-8", errors="replace").strip()[:400] if cap.is_file() else ""
+                    files.append({"name": f.name, "caption": caption, "mtime": int(f.stat().st_mtime)})
+        body = json.dumps({"files": files, "playlist": has_playlist}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def log_message(self, fmt, *args):
         if len(args) > 1 and str(args[1])[0] in "45" and not self.path.startswith("/favicon"):
@@ -175,6 +240,9 @@ def main():
     if a.set_calendar:
         set_calendar()
 
+    if not MEDIA_DIR.exists():
+        MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+        (MEDIA_DIR / "README.txt").write_text(MEDIA_README, encoding="utf-8")
     srv, port = start_server(a.port)
     if a.web:
         query, size = "?mode=web", (1280, 860)
@@ -202,7 +270,7 @@ def main():
     else:
         print("  hours:    Google Calendar, re-read every 5 min")
         threading.Thread(target=calendar_loop, daemon=True).start()
-    print("  playlist: media/playlist.js   (edit, then press F5 in the display window)")
+    print(f"  media:    {MEDIA_DIR}   (drop files in; empty = media/playlist.js from the repo)")
     print("  stop:     Ctrl+C\n")
 
     proc = None if a.no_browser else open_display(url, size, a.fullscreen)

@@ -20,6 +20,9 @@ Exec=$SITE_DIR/kiosk/start-kiosk.sh
 X-GNOME-Autostart-enabled=true
 DESK
 
+echo "• Creating the media folder ~/AM-Lab-Media (top-panel videos live here, not on GitHub)…"
+mkdir -p "$HOME/AM-Lab-Media"
+
 echo "• Installing the calendar reader (Python venv, outside the repo)…"
 VENV="$HOME/.local/share/am-lab/venv"
 if ! python3 -m venv --help >/dev/null 2>&1; then sudo apt-get install -y python3-venv; fi
@@ -39,5 +42,6 @@ if [ ! -s "$HOME/.config/am-lab/calendar-url" ]; then
 fi
 
 echo
-echo "Done. Also recommended: raspi-config → Display → Screen Blanking → Off,"
+echo "Done. Drop videos/images into ~/AM-Lab-Media (see media/README.md)."
+echo "Also recommended: raspi-config → Display → Screen Blanking → Off,"
 echo "and System → Auto Login → Desktop. Reboot to start the display."
