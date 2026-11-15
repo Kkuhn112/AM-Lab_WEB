@@ -9,8 +9,9 @@ Run the lab display on your own computer, the same way the Raspberry Pi does.
     shaped like the lab TV
 
 Usage (Windows, macOS, Linux — needs Python 3.9+):
-  python run-local.py                    landscape TV (16:9)
-  python run-local.py --portrait         portrait TV (9:16)
+  python run-local.py                    TV layout picked from the window's shape, like the Pi
+  python run-local.py --landscape        force the landscape TV (16:9)
+  python run-local.py --portrait         force the portrait TV (9:16)
   python run-local.py --fullscreen       exactly like the Pi: full screen, no cursor (Alt+F4 / Cmd+Q to exit)
   python run-local.py --web              the normal website instead of the TV layout
   python run-local.py --set-calendar     connect the lab-hours calendar on this computer
@@ -154,7 +155,8 @@ def open_display(url, size, fullscreen):
 # ---------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--portrait", action="store_true", help="portrait TV (9:16)")
+    ap.add_argument("--portrait", action="store_true", help="force the portrait TV (9:16)")
+    ap.add_argument("--landscape", action="store_true", help="force the landscape TV (16:9)")
     ap.add_argument("--web", action="store_true", help="the normal website, not the TV layout")
     ap.add_argument("--fullscreen", action="store_true", help="full screen with hidden cursor, exactly like the Pi")
     ap.add_argument("--size", help="window size WxH, e.g. 1920x1080 (default fits a typical laptop screen)")
@@ -178,8 +180,10 @@ def main():
         query, size = "?mode=web", (1280, 860)
     elif a.portrait:
         query, size = "?mode=kiosk&orient=portrait", (540, 960)   # 9:16, renders like 1080×1920
-    else:
+    elif a.landscape:
         query, size = "?mode=kiosk&orient=landscape", (1440, 810)  # 16:9, renders like 1920×1080
+    else:
+        query, size = "?mode=kiosk", (1440, 810)                   # orientation follows the window, like the Pi
     if not a.fullscreen and not a.web:
         query += "&cursor=show"                                    # Pi hides the cursor; keep it while testing
     if a.size:

@@ -41,20 +41,25 @@ h2 { font-size: 1rem; font-weight: 600; letter-spacing: -0.005em; }
 
 /* ---------------- Layout ---------------- */
 .layout { display: flex; flex-direction: column; }
-.info { display: flex; flex-direction: column; gap: 1.75rem; padding: 1.5rem 1.25rem 1.25rem; }
+.info { background: var(--paper); display: flex; flex-direction: column; gap: 1.75rem; padding: 1.5rem 1.25rem 1.25rem; }
 .stage { position: relative; order: -1; height: 62vh; min-height: 22rem; background: var(--stage); overflow: hidden; color: #fff; }
 
-html.split { font-size: clamp(10px, 1.48vh, 34px); }          /* 16px @ 1080p */
+/* --boxw/--boxh = the TV screen being drawn (set by app.js). Everything is
+   sized from --boxh, so a 1080p TV, a 4K TV and a small preview window all
+   show the same layout at different scales. 16px rem @ 1080 tall.         */
+html.split { --boxw: 100vw; --boxh: 100vh; font-size: min(calc(var(--boxh) * 0.0148), 34px); }
+html.split.boxed body { background: #000; display: flex; align-items: center; justify-content: center; }
+html.split.boxed .layout { flex: none; overflow: hidden; }
 html.split, html.split body { height: 100%; overflow: hidden; }
-html.split .layout { flex-direction: row; height: 100vh; }
-html.split .info { width: 50%; height: 100vh; min-height: 0; padding: 2.5rem 2.75rem 1.75rem; gap: 1.6rem; }
-html.split .stage { width: 50%; height: 100vh; min-height: 0; order: 0; }
+html.split .layout { flex-direction: row; width: var(--boxw); height: var(--boxh); }
+html.split .info { width: 50%; height: var(--boxh); min-height: 0; padding: 2.5rem 2.75rem 1.75rem; gap: 1.6rem; }
+html.split .stage { width: 50%; height: var(--boxh); min-height: 0; order: 0; }
 
 /* 9:16 — media top half, info bottom half */
-html.split.portrait { font-size: clamp(9px, 0.8vh, 36px); }    /* ~15px @ 1920 tall */
+html.split.portrait { font-size: min(calc(var(--boxh) * 0.008), 36px); }    /* ~15px @ 1920 tall */
 html.split.portrait .layout { flex-direction: column; }
-html.split.portrait .stage { order: -1; width: 100%; height: 50vh; }
-html.split.portrait .info { width: 100%; height: 50vh; padding: 2.1rem 2.9rem 1.5rem; gap: 1.5rem; }
+html.split.portrait .stage { order: -1; width: 100%; height: calc(var(--boxh) / 2); }
+html.split.portrait .info { width: 100%; height: calc(var(--boxh) / 2); padding: 2.1rem 2.9rem 1.5rem; gap: 1.5rem; }
 
 html.kiosk.hide-cursor, html.kiosk.hide-cursor * { cursor: none !important; }
 

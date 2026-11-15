@@ -20,12 +20,37 @@
     root.classList.add("kiosk");
     if (C.kiosk?.hideCursor !== false && params.get("cursor") !== "show") root.classList.add("hide-cursor");
   }
+  // TV mode draws an exact 16:9 (or 9:16) screen, scaled to fit the window
+  // with black bars if the window has a different shape. On the real TV the
+  // shapes match and it fills edge to edge; in a test window or VM it is a
+  // faithful scaled-down preview instead of a squeezed layout.
   function applyMode() {
-    const wide = innerWidth >= 1100 && innerWidth / innerHeight >= 1.25;
-    const tall = innerHeight / innerWidth >= 1.4 && (mode === "kiosk" || innerWidth >= 900);
-    const portrait = mode !== "web" && orient !== "landscape" && (orient === "portrait" || tall);
+    const W = innerWidth, H = innerHeight;
+    let split, portrait;
+    if (mode === "web") {
+      split = portrait = false;
+    } else if (mode === "kiosk") {
+      split = true;
+      portrait = orient ? orient === "portrait" : H > W;
+    } else {                                   // public website: auto
+      portrait = orient === "portrait" || (orient !== "landscape" && H / W >= 1.4 && W >= 900);
+      split = portrait || orient === "landscape" || (W >= 1100 && W / H >= 1.25);
+    }
     root.classList.toggle("portrait", portrait);
-    root.classList.toggle("split", mode !== "web" && (portrait || mode === "kiosk" || wide));
+    root.classList.toggle("split", split);
+
+    let bw = W, bh = H;
+    if (split) {
+      const target = portrait ? 9 / 16 : 16 / 9;
+      const off = Math.abs(W / H / target - 1);
+      if (off > (mode === "kiosk" ? 0.02 : 0.15)) {
+        if (W / H > target) { bh = H; bw = H * target; } else { bw = W; bh = W / target; }
+      }
+    }
+    const boxed = split && (Math.round(bw) < W || Math.round(bh) < H);
+    root.classList.toggle("boxed", boxed);
+    root.style.setProperty("--boxw", bw + "px");
+    root.style.setProperty("--boxh", bh + "px");
   }
   applyMode();
   addEventListener("resize", applyMode);

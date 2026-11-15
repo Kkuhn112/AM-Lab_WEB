@@ -41,15 +41,15 @@ On 16:9 screens with an odd number of printers, the first printer gets a large f
 
 | Do | Windows | macOS / Linux |
 |---|---|---|
-| Landscape TV (16:9) | double-click `run-local.bat` | double-click `run-local.command`, or `python3 run-local.py` |
-| Portrait TV (9:16) | `run-local.bat --portrait` | `python3 run-local.py --portrait` |
+| TV layout (orientation follows the window, like the Pi) | double-click `run-local.bat` | double-click `run-local.command`, or `python3 run-local.py` |
+| Force landscape (16:9) or portrait (9:16) | `run-local.bat --landscape` / `--portrait` | `python3 run-local.py --landscape` / `--portrait` |
 | Exactly like the Pi (full screen, no cursor) | `--fullscreen` (exit with Alt+F4) | `--fullscreen` (exit with Cmd+Q) |
 | Normal website | `--web` | `--web` |
 | Connect the calendar on this PC | `--set-calendar` | `--set-calendar` |
 
 - Edit `media/playlist.js` or `js/config.js`, then press **F5** in the display window. Use **← / →** to step through slides. Stop with **Ctrl+C** in the terminal.
 - For calendar hours, install the reader once with `python -m pip install icalendar recurring-ical-events`, then run with `--set-calendar`. The link is stored in `~/.config/am-lab/calendar-url` on your PC, never in the repo.
-- The window is a scaled-down TV (1440×810 or 540×960). The layout scales with screen height, so it looks the same as on the 1080p or 4K TV. Use `--size 1920x1080` for full size.
+- Whatever size or shape the window is (a VM, a small laptop screen), the page draws an exact 16:9 or 9:16 TV scaled to fit, with black bars around any leftover space. So the preview is always what the real TV will show. Use `--size 1920x1080` for full size.
 - If Chrome, Edge or Chromium isn't installed, it opens your default browser instead.
 
 ## 2. The dynamic half (videos, exploded views, anything)
