@@ -15,6 +15,8 @@
 #   SIZE=2160 bash media/convert.sh input.mov name          → 4K square (2160 × 2160)
 #   PAD=1 bash media/convert.sh input.mov name              → keep everything, pad instead of crop
 #
+# Step-by-step guide: media/CONVERTING.md
+#
 # Needs ffmpeg  (Mac: brew install ffmpeg · Windows: winget install ffmpeg
 #                · Linux/Pi: sudo apt install ffmpeg)
 set -euo pipefail

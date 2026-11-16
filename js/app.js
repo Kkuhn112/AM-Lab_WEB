@@ -132,16 +132,18 @@
       ? `<b>Open now</b> until ${fmt(cur[1])}`
       : `<b>Closed</b>${nextOpening(now) ? " · opens " + nextOpening(now) : ""}`;
 
-    // This week (Mon–Sun). Configured days always show; others only if they have hours.
-    // On Sat/Sun show the coming week — unless the lab is still open later
-    // today (e.g. a weekend session), in which case keep this week.
-    const weekend = now.dow === 6 || now.dow === 0;
-    const nextWeek = weekend && !today.ranges.some(([, b]) => now.mins < b);
-    const mondayOffset = nextWeek ? (now.dow === 6 ? 2 : 1) : -((now.dow + 6) % 7);
-    $("hoursHeading").textContent = nextWeek ? "Hours · next week" : "Hours";
+    // Rolling week: the next five weekdays starting today (Mon–Fri by default,
+    // from hours.days). As each day passes it drops off the left and the same
+    // weekday of next week appears on the right — on Wednesday the columns are
+    // Wed Thu Fri | Mon Tue. On a weekend it starts at Monday.
     const base = C.hours.days || ["mon", "tue", "wed", "thu", "fri"];
-    const week = [1, 2, 3, 4, 5, 6, 0].map((idx, k) => ({ idx, off: mondayOffset + k, di: dayInfo(now, mondayOffset + k) }))
-      .filter(({ idx, di }) => base.includes(DAYS[idx]) || di.ranges.length);
+    const week = [];
+    for (let off = 0; week.length < base.length && off < 14; off++) {
+      const di = dayInfo(now, off);
+      if (base.includes(DAYS[di.dow])) week.push({ idx: di.dow, off, di });
+    }
+    const monFirst = (d) => (d + 6) % 7;          // Mon = 0 … Sun = 6
+    week.forEach((w, k) => { w.newWeek = k > 0 && monFirst(w.idx) <= monFirst(week[k - 1].idx); });
 
     // Visible span: config grid, widened to whole hours if an event falls outside it.
     let g0 = toMin(C.hours.gridStart || "09:00"), g1 = toMin(C.hours.gridEnd || "17:00");
@@ -157,19 +159,21 @@
       axis += `<span style="top:${pct(m)}%">${fmt(m, false).replace(":00", "")}${h === 0 || m === 720 ? (m < 720 ? " am" : " pm") : ""}</span>`;
     }
     const closures = [];
-    week.forEach(({ idx, off, di }) => {
+    week.forEach(({ idx, off, di, newWeek }) => {
       const isToday = off === 0;
-      head += `<div class="tt-day${isToday ? " today" : ""}">${DAY_NAMES[idx].slice(0, 3)}<span>${di.date}</span></div>`;
+      const closed = !di.ranges.length;            // no hours that day = closed
+      const cls = (isToday ? " today" : "") + (newWeek ? " wk-start" : "") + (closed ? " closed" : "");
+      head += `<div class="tt-day${cls}">${DAY_NAMES[idx].slice(0, 3)}<span>${di.date}</span></div>`;
       let blocks = di.ranges.map(([a, b]) => {
         const past = off < 0 || (isToday && now.mins >= b);
         return `<div class="tt-block${past ? " past" : ""}" style="top:${pct(a)}%;height:${pct(b) - pct(a)}%">${fmt(a, false)}–${fmt(b, false)}</div>`;
       }).join("");
-      if (di.ex && !di.ranges.length) {
+      if (closed) {
         blocks += `<div class="tt-closed">Closed</div>`;
-        closures.push(`${DAY_NAMES[idx]} ${di.month + 1}/${di.date}${di.ex.label ? ": " + esc(di.ex.label) : ""}`);
+        if (di.ex && di.ex.label) closures.push(`${DAY_NAMES[idx]} ${di.month + 1}/${di.date}: ${esc(di.ex.label)}`);
       }
       if (isToday && now.mins >= g0 && now.mins <= g1) blocks += `<div class="tt-now" style="top:${pct(now.mins)}%"></div>`;
-      cols += `<div class="tt-col${isToday ? " today" : ""}">${blocks}</div>`;
+      cols += `<div class="tt-col${cls}">${blocks}</div>`;
     });
     const tt = $("timetable");
     tt.style.setProperty("--cols", week.length);

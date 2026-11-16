@@ -45,6 +45,8 @@ Images (`.jpg`, `.png`, `.webp`) follow the same standard. 3D models (`.glb`) fr
 
 ## Converting any video to the standard
 
+**Step-by-step guide:** [CONVERTING.md](CONVERTING.md) covers checking a file, the converter, a one-line ffmpeg command, HandBrake, and phone and CAD export settings.
+
 [`convert.sh`](convert.sh) takes any video (wrong size, 4K, 60 fps, landscape, with audio) and outputs a correct MP4 straight into `~/AM-Lab-Media`. Non-square video is zoomed to fill the square and centred, the same way the display fills its panel; use `PAD=1` to keep the whole picture with background bars instead. A leading number in the name sets the play order:
 
 ```bash

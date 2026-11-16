@@ -7,6 +7,10 @@ The timetable on the lab screen can be driven by a private Google Calendar. Edit
 - The link is never committed, pushed, or put on GitHub, and failed fetches never print it.
 - The hours generated from it (`data/schedule.js`) stay on the Pi too; git ignores that file.
 
+## How the timetable reads
+
+The timetable is a **rolling five weekdays starting today**. Each day that passes drops off the left, and the same weekday of next week appears on the right. On a Wednesday it shows **Wed Thu Fri | Mon Tue**, with a line marking where next week starts. On weekends it shows the coming Monday to Friday.
+
 ## How the calendar is read
 
 | In Google Calendar | On the screen |
@@ -14,7 +18,8 @@ The timetable on the lab screen can be driven by a private Google Calendar. Edit
 | **A timed event**, e.g. Mon 10:30–12:00 repeating weekly | An open block in the timetable. The event title doesn't matter. |
 | **An all-day event** | The lab is **closed** that day. The event title is shown as the reason, e.g. "Thanksgiving". |
 | A deleted or moved single occurrence of a repeating event | Handled: that day shows the change. |
-| An event on Saturday or Sunday | A weekend column appears for that week automatically. |
+| A weekday with no events | Shown as **Closed** (hatched). |
+| An event on Saturday or Sunday | It counts for the "Open now" / "opens …" status line, but the timetable only shows weekdays. |
 | An event outside 9 AM–5 PM | The timetable stretches to fit it. |
 
 Use a **dedicated calendar** for lab hours only: every timed event counts as open time.

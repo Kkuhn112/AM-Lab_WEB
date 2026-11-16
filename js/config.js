@@ -33,7 +33,7 @@ window.LAB_CONFIG = {
     timezone: "America/Denver",
     gridStart: "09:00",          // timetable shows this span
     gridEnd: "17:00",            //   (widens automatically if an event falls outside it)
-    days: ["mon", "tue", "wed", "thu", "fri"],   // columns always shown; Sat/Sun appear if they have hours
+    days: ["mon", "tue", "wed", "thu", "fri"],   // weekdays in the rolling timetable (next 5 from today); no hours = Closed
     weekly: {
       mon: [["10:30", "12:00"]],
       tue: [["14:00", "17:00"]],
