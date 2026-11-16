@@ -279,6 +279,16 @@
       const r = await fetch(LOCAL + "index.json", { cache: "no-store" });
       if (r.ok) {
         const idx = await r.json();
+        // ?v=<modified time> on each local file: a file replaced under the same
+        // name gets a new URL, so the player notices and plays the new one.
+        const mtime = Object.fromEntries((idx.files || []).map((f) => [f.name, f.mtime]));
+        const stamp = (it) => {
+          if (it && it.src && it.src.startsWith(LOCAL)) {
+            const name = decodeURIComponent(it.src.slice(LOCAL.length));
+            if (mtime[name]) it.src += "?v=" + mtime[name];
+          }
+          return it;
+        };
         if (idx.playlist) {                        // local playlist.js (same format as the repo one)
           const saved = window.LAB_PLAYLIST;
           window.LAB_PLAYLIST = undefined;
@@ -286,14 +296,14 @@
           const list = window.LAB_PLAYLIST;
           window.LAB_PLAYLIST = saved;
           if (Array.isArray(list)) {
-            const items = list.map((e) => normalize(e, LOCAL)).filter(Boolean);
+            const items = list.map((e) => stamp(normalize(e, LOCAL))).filter(Boolean);
             if (items.length) return items;
           }
           console.warn("[AM Lab] local playlist.js is empty or has an error — using the files in the folder");
         }
         const files = (idx.files || []).slice()
           .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
-        const items = files.map((f) => normalize({ file: f.name, title: titleFromName(f.name), caption: f.caption }, LOCAL)).filter(Boolean);
+        const items = files.map((f) => stamp(normalize({ file: f.name, title: titleFromName(f.name), caption: f.caption }, LOCAL))).filter(Boolean);
         if (items.length) return items;
       }
     } catch (e) { /* no local server (GitHub Pages, file://) */ }
