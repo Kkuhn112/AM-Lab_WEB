@@ -22,8 +22,8 @@
      title      large heading over the bottom of the frame
      caption    one or two sentences under the title
      seconds    how long to show it (videos default to their own length)
-     fit        "contain" (default: whole frame, never cropped)
-                or "cover" (fill the screen edge to edge, crops the sides)
+     fit        "cover" (default: zoom to fill the panel, centred, crops the overflow)
+                or "contain" (whole frame, never cropped, background around it)
      orbit      3D models only: camera angle, e.g. "120deg 72deg 100%"
      skip       true = keep the line but don't play it
    ===================================================================== */

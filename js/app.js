@@ -243,7 +243,9 @@
     if (e.type && e.src) return e;                       // legacy config.js format
     const f = String(e.file || "").trim();
     if (!f) return null;
-    const base = { title: e.title, caption: e.caption, duration: e.seconds, fit: e.fit || "contain" };
+    // fit: "cover" (default) zooms to fill the panel, centred, cropping the overflow;
+    //      "contain" shows the whole frame with background around it.
+    const base = { title: e.title, caption: e.caption, duration: e.seconds, fit: e.fit === "contain" ? "contain" : "cover" };
     if (f === "builtin:hotend") return { ...base, type: "exploded-demo" };
     const yt = f.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
     if (yt) return { ...base, type: "youtube", id: yt[1], duration: e.seconds || 30 };
@@ -263,8 +265,12 @@
   const REPO_PLAYLIST = window.LAB_PLAYLIST || C.media || [];
   const LOCAL = "local-media/";
 
-  // "02 Planetary_gearbox.mp4" → "Planetary gearbox"
-  const titleFromName = (n) => n.replace(/\.[^.]+$/, "").replace(/^\d+[\s._-]*/, "").replace(/_+/g, " ").trim();
+  // Optional "<same name>.txt" next to a file: first line = title, rest = caption.
+  // No .txt → no title (the filename is only used for ordering).
+  const textParts = (t) => {
+    const lines = String(t || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    return { title: lines[0] || "", caption: lines.slice(1).join(" ") };
+  };
 
   function loadScript(src) {
     return new Promise((ok, bad) => {
@@ -303,7 +309,7 @@
         }
         const files = (idx.files || []).slice()
           .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
-        const items = files.map((f) => stamp(normalize({ file: f.name, title: titleFromName(f.name), caption: f.caption }, LOCAL))).filter(Boolean);
+        const items = files.map((f) => stamp(normalize({ file: f.name, ...textParts(f.caption) }, LOCAL))).filter(Boolean);
         if (items.length) return items;
       }
     } catch (e) { /* no local server (GitHub Pages, file://) */ }
@@ -333,7 +339,7 @@
 
     function create(it, ready, fail) {
       const s = document.createElement("div");
-      s.className = "slide" + (it.title || it.caption ? " has-caption" : "") + (it.fit === "cover" ? " fit-cover" : "");
+      s.className = "slide" + (it.title || it.caption ? " has-caption" : "") + (it.fit === "contain" ? " fit-contain" : "");
       let api = { destroy() {} };
       switch (it.type) {
         case "exploded-demo":

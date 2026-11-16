@@ -54,9 +54,9 @@ On 16:9 screens with an odd number of printers, the first printer gets a large f
 
 ## 2. The dynamic half (videos, exploded views, anything)
 
-Media is stored **on the Pi**, not on GitHub. Drop files into **`~/AM-Lab-Media`** and they play in filename order, with the filename as the title (`02 Planetary gearbox.mp4` shows as "Planetary gearbox"). An optional same-named `.txt` file adds a caption. The screen picks up changes within 2 minutes. Copy files in with a USB stick, or over the network with WinSCP or `scp`. Add a `playlist.js` to that folder for full control.
+Media is stored **on the Pi**, not on GitHub. Drop files into **`~/AM-Lab-Media`** and they play in filename order, zoomed to fill the panel (centred, no black bars) with no title. An optional same-named `.txt` file adds one: line 1 is the title, the rest is a caption. The screen picks up changes within 2 minutes. Copy files in with a USB stick, or over the network with WinSCP or `scp`. Add a `playlist.js` to that folder for full control.
 
-**Video standard:** 1080 × 1080 square, MP4 (H.264), 30 fps, background #0B0B0C. Keep 60 px clear around the edges, and keep the bottom 25 % clear for the title. `media/convert.sh` turns any video into this format and saves it straight into `~/AM-Lab-Media`. Full details are in **[media/README.md](media/README.md)**.
+**Video standard:** 1080 × 1080 square, MP4 (H.264), 30 fps, background #0B0B0C. Keep the subject centred and 60 px clear of the edges. `media/convert.sh` turns any video into this format and saves it straight into `~/AM-Lab-Media`. Full details are in **[media/README.md](media/README.md)**.
 
 ## 3. Publish on GitHub Pages (optional)
 The Pi does not need this. A public copy shows the fixed `hours.weekly` from `js/config.js`, because the calendar is only read on the Pi.

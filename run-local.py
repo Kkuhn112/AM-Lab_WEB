@@ -57,15 +57,17 @@ Everything in this folder plays on the top/right panel of the lab screen.
   * They play in filename order. Start names with numbers to set the order:
         01 Planetary gearbox.mp4
         02 Gyroid bracket.jpg
-  * The filename (minus the number) is shown as the title.
-  * For a caption, add a .txt file with the same name:
-        01 Planetary gearbox.txt   ->  "MECH 3xxx final project"
+  * Videos and images zoom to fill the panel, centred. No title is shown.
+  * For a title, add a .txt file with the same name. Line 1 = title,
+    any further lines = caption:
+        01 Planetary gearbox.txt   ->  Planetary gearbox
+                                       MECH 3xxx final project
   * Delete a file to remove it. The screen picks up changes within 2 minutes.
 
 Video standard: 1080 x 1080, MP4 (H.264), background #0B0B0C.
 media/convert.sh in the website repo converts any video to it.
 
-For full control (no title, durations, built-in animations), put a
+For full control (durations, uncropped "contain", built-ins), put a
 playlist.js here - see media/README.md in the website repo.
 """
 
