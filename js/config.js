@@ -77,10 +77,10 @@ window.LAB_CONFIG = {
       note: "Large format"
     },
     {
-      // TODO: add photo (assets/printers/fiber-seeker.jpg) and build volume
+      // TODO: build volume
       name: "Fiber Seeker",
       count: 1,
-      image: "",
+      image: "assets/printers/fiber-seeker.jpg",
       buildVolume: "",
       note: "Continuous fiber"
     }
