@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Code Maker</title>
+<meta name="description" content="Paste any link, get a QR code, download it as PNG or SVG. Runs entirely in your browser.">
+<style>
+  @font-face {
+    font-family: "Inter";
+    src: url("../fonts/inter-latin-wght-normal.woff2") format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+  }
+  :root {
+    --ink: #0e0e0f; --ink-2: #4a4a4f; --ink-3: #8a8a90;
+    --line: #e7e7e9; --wash: #f4f4f5; --paper: #ffffff;
+    --gold: #cfb87c; --gold-ink: #8a6d2a;
+    --font: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--font); color: var(--ink); background: var(--wash);
+    -webkit-font-smoothing: antialiased; min-height: 100vh;
+    display: flex; justify-content: center; padding: 40px 16px;
+  }
+  main {
+    width: 100%; max-width: 880px; align-self: flex-start; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 16px; padding: 28px;
+    display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start;
+  }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; letter-spacing: -0.02em; }
+  .sub { margin: 0 0 24px; color: var(--ink-2); font-size: .95rem; }
+  label { display: block; font-size: .8rem; font-weight: 600; color: var(--ink-2); margin: 0 0 6px; }
+  .field { margin-bottom: 18px; }
+  input[type=text], input[type=url], select {
+    width: 100%; font: inherit; font-size: 1rem; padding: 11px 12px;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink);
+  }
+  input:focus, select:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .colors { display: flex; gap: 14px; }
+  .colors > div { flex: 1; }
+  input[type=color] {
+    width: 100%; height: 44px; padding: 4px; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--paper); cursor: pointer;
+  }
+  input[type=range] { width: 100%; accent-color: var(--gold-ink); }
+  .val { float: right; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .preview {
+    background: var(--wash); border-radius: 12px; padding: 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  #qr { width: 100%; aspect-ratio: 1; display: block; image-rendering: pixelated; border-radius: 4px; }
+  .empty { width: 100%; aspect-ratio: 1; display: grid; place-items: center; color: var(--ink-3);
+           border: 2px dashed var(--line); border-radius: 8px; font-size: .9rem; text-align: center; padding: 20px; }
+  .btns { display: flex; gap: 10px; width: 100%; }
+  button {
+    flex: 1; font: inherit; font-weight: 600; font-size: .95rem; padding: 12px; border-radius: 10px;
+    border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer;
+  }
+  button.alt { background: var(--paper); color: var(--ink); }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  button:not(:disabled):hover { filter: brightness(1.15); }
+  .note { font-size: .8rem; color: var(--ink-3); margin: 0; min-height: 1.2em; text-align: center; word-break: break-all; }
+  .warn { color: #b3261e; }
+  @media (max-width: 720px) {
+    body { padding: 16px; }
+    main { grid-template-columns: 1fr; padding: 20px; gap: 24px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section>
+    <h1>QR Code Maker</h1>
+    <p class="sub">Paste any link, then download the code as PNG or SVG. Nothing leaves your browser.</p>
+
+    <div class="field">
+      <label for="text">Link or text</label>
+      <input id="text" type="text" placeholder="https://example.com" autocomplete="off" autofocus>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="ec">Error correction</label>
+        <select id="ec">
+          <option value="L">Low (7%) · smallest</option>
+          <option value="M" selected>Medium (15%)</option>
+          <option value="Q">Quartile (25%)</option>
+          <option value="H">High (30%) · toughest</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="name">File name</label>
+        <input id="name" type="text" value="qr-code" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="size">PNG size <span class="val" id="sizeVal"></span></label>
+      <input id="size" type="range" min="256" max="4096" step="128" value="1024">
+    </div>
+
+    <div class="field">
+      <label for="margin">Quiet zone (border) <span class="val" id="marginVal"></span></label>
+      <input id="margin" type="range" min="0" max="8" step="1" value="4">
+    </div>
+
+    <div class="colors field">
+      <div><label for="fg">Foreground</label><input id="fg" type="color" value="#0e0e0f"></div>
+      <div><label for="bg">Background</label><input id="bg" type="color" value="#ffffff"></div>
+    </div>
+  </section>
+
+  <section class="preview">
+    <canvas id="qr" hidden></canvas>
+    <div class="empty" id="empty">Your QR code will appear here</div>
+    <label style="margin:0;align-self:flex-start">Download</label>
+    <div class="btns">
+      <button id="png" disabled>PNG</button>
+      <button id="svg" disabled>SVG</button>
+    </div>
+    <button id="copy" class="alt" disabled style="width:100%">Copy image</button>
+    <p class="note" id="note"></p>
+  </section>
+</main>
+
+<script src="../vendor/qrcode.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const els = ["text", "ec", "name", "size", "margin", "fg", "bg"].reduce((o, k) => (o[k] = $(k), o), {});
+  const canvas = $("qr"), empty = $("empty"), note = $("note");
+  const buttons = [$("png"), $("svg"), $("copy")];
+  let current = null; // { count, isDark }
+
+  // Encode as UTF-8 so non-ASCII links and text scan correctly.
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+
+  // Prefill from ?url=... so links to this page can be shared.
+  const pre = new URLSearchParams(location.search).get("url");
+  if (pre) els.text.value = pre;
+
+  function build() {
+    const text = els.text.value.trim();
+    $("sizeVal").textContent = els.size.value + " px";
+    $("marginVal").textContent = els.margin.value + " modules";
+    current = null;
+    note.className = "note";
+    note.textContent = "";
+    if (!text) return show(false);
+    try {
+      const qr = qrcode(0, els.ec.value);
+      qr.addData(text);
+      qr.make();
+      current = { count: qr.getModuleCount(), isDark: (r, c) => qr.isDark(r, c) };
+    } catch (e) {
+      note.className = "note warn";
+      note.textContent = "Too long to fit in a QR code. Try a shorter link or lower error correction.";
+      return show(false);
+    }
+    draw(canvas, 640);
+    show(true);
+    if (/^[a-z][a-z0-9+.-]*:/i.test(text) === false && /\.\w{2,}/.test(text)) {
+      note.textContent = "Tip: add https:// so phones open it as a link.";
+    }
+  }
+
+  function show(ok) {
+    canvas.hidden = !ok;
+    empty.hidden = ok;
+    buttons.forEach(b => (b.disabled = !ok));
+  }
+
+  // Draw with whole-pixel modules so edges stay crisp; leftover pixels pad the border evenly.
+  function draw(cv, target) {
+    const m = +els.margin.value, total = current.count + m * 2;
+    const cell = Math.max(1, Math.floor(target / total));
+    const size = cell * total, pad = Math.floor((target - size) / 2);
+    cv.width = cv.height = target;
+    const ctx = cv.getContext("2d");
+    ctx.fillStyle = els.bg.value;
+    ctx.fillRect(0, 0, target, target);
+    ctx.fillStyle = els.fg.value;
+    for (let r = 0; r < current.count; r++)
+      for (let c = 0; c < current.count; c++)
+        if (current.isDark(r, c)) ctx.fillRect(pad + (c + m) * cell, pad + (r + m) * cell, cell, cell);
+    return cv;
+  }
+
+  function svgString() {
+    const m = +els.margin.value, n = current.count, total = n + m * 2;
+    let d = "";
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++)
+        if (current.isDark(r, c)) d += `M${c + m} ${r + m}h1v1h-1z`;
+    return `<?xml version="1.0" encoding="UTF-8"?>\n` +
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="1024" height="1024" shape-rendering="crispEdges">` +
+      `<rect width="100%" height="100%" fill="${els.bg.value}"/><path fill="${els.fg.value}" d="${d}"/></svg>`;
+  }
+
+  function fileName(ext) {
+    const base = els.name.value.trim().replace(/[^\w.-]+/g, "-").replace(/^-+|-+$/g, "") || "qr-code";
+    return base + "." + ext;
+  }
+
+  function save(blob, name) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  const pngBlob = () => new Promise(res => draw(document.createElement("canvas"), +els.size.value).toBlob(res, "image/png"));
+
+  $("png").onclick = async () => { if (current) save(await pngBlob(), fileName("png")); };
+  $("svg").onclick = () => { if (current) save(new Blob([svgString()], { type: "image/svg+xml" }), fileName("svg")); };
+  $("copy").onclick = async () => {
+    if (!current) return;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob() })]);
+      note.textContent = "Copied to clipboard.";
+    } catch (e) {
+      note.textContent = "Your browser blocked copying — use Download instead.";
+    }
+  };
+
+  Object.values(els).forEach(el => el.addEventListener("input", build));
+  build();
+})();
+</script>
+</body>
+</html>

@@ -12,6 +12,7 @@ It is plain HTML, CSS and JS with no build step. All libraries and fonts are ven
 media/                the video standard, convert.sh, editor guides, default playlist
 js/config.js          ← EDIT THIS for the QR link, printers, fallback hours
 CALENDAR.md           drive the hours timetable from a private Google Calendar (on the Pi)
+qr/                   standalone QR code maker (any link → PNG/SVG download), served at /qr/
 tools/                gcal_to_schedule.py (calendar → data/schedule.js, generated on the Pi, never committed)
 index.html, js/, css/ the page itself
 assets/               printer photos, logos
