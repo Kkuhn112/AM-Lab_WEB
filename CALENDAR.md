@@ -46,7 +46,7 @@ Paste the link and press Enter; the input is hidden. The script saves the link p
 
 `kiosk/setup-pi.sh` also offers to do this during first-time setup.
 
-That's it. The Pi re-reads the calendar every 5 minutes, and the page refreshes its hours every 5 minutes.
+That's it. While the display is running, it re-reads the calendar every 5 minutes on its own (no cron job, nothing to press), and the page picks up new hours within a minute. A link connected or changed later is used from the next 5-minute check, without a restart.
 
 ## Managing it
 
@@ -55,7 +55,7 @@ That's it. The Pi re-reads the calendar every 5 minutes, and the page refreshes 
 | Change the calendar link | Run `bash kiosk/set-calendar.sh` again. |
 | Disconnect the calendar | Run `bash kiosk/set-calendar.sh --remove`. The screen goes back to `hours.weekly` in `js/config.js`. |
 | Update right now | Run `bash kiosk/update-calendar.sh`. |
-| See errors | `cat ~/.cache/am-lab/calendar.log` (successful runs only log when the hours changed). |
+| See what it's doing | `tail -n 30 ~/.cache/am-lab/display.log`. It logs when the hours change, and any fetch errors. |
 | Someone saw the link | In Google Calendar, use *Reset* next to the secret address, then run `set-calendar.sh` with the new link. |
 
 ## Good to know

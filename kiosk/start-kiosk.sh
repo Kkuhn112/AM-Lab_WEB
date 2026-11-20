@@ -11,7 +11,9 @@ PORT="${AMLAB_PORT:-8080}"
 # Replace the old plain `http.server` (no cache headers) if it's still running.
 pkill -f "http.server ${PORT} --bind 127.0.0.1" 2>/dev/null && sleep 0.5
 if ! curl -fs "http://127.0.0.1:${PORT}/" >/dev/null 2>&1; then
-  python3 "$SITE_DIR/run-local.py" --no-browser --no-calendar --port "$PORT" >/dev/null 2>&1 &
+  # Also re-reads the lab-hours calendar every 5 min (if connected); log below.
+  LOG_DIR="$HOME/.cache/am-lab"; mkdir -p "$LOG_DIR"
+  python3 -u "$SITE_DIR/run-local.py" --no-browser --port "$PORT" >>"$LOG_DIR/display.log" 2>&1 &
   for _ in $(seq 1 20); do curl -fs "http://127.0.0.1:${PORT}/" >/dev/null 2>&1 && break; sleep 0.5; done
 fi
 

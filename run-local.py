@@ -43,7 +43,7 @@ ROOT = Path(__file__).resolve().parent
 CONF_DIR = Path(os.environ.get("AMLAB_CONFIG_DIR", Path.home() / ".config" / "am-lab"))
 URL_FILE = CONF_DIR / "calendar-url"
 CAL_SCRIPT = ROOT / "tools" / "gcal_to_schedule.py"
-CAL_EVERY = 5 * 60
+CAL_EVERY = int(os.environ.get("AMLAB_CAL_EVERY", 5 * 60))   # seconds
 # Top-panel media lives here, on the machine — not in the repo / on GitHub.
 MEDIA_DIR = Path(os.environ.get("AMLAB_MEDIA_DIR", Path.home() / "AM-Lab-Media"))
 MEDIA_EXT = {".mp4", ".webm", ".mov", ".m4v", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif",
@@ -160,28 +160,42 @@ def set_calendar():
     print(f"Saved to {URL_FILE} (only on this computer, never in the repo).")
 
 
+def calendar_python():
+    """The Python that has the calendar reader: the Pi's private venv
+    (~/.local/share/am-lab/venv, made by setup-pi.sh) if present, else this one."""
+    venv = Path(os.environ.get("AMLAB_VENV", Path.home() / ".local" / "share" / "am-lab" / "venv"))
+    for exe in (venv / "bin" / "python3", venv / "Scripts" / "python.exe"):
+        if exe.exists():
+            return str(exe)
+    return sys.executable
+
+
 def calendar_deps_ok():
-    try:
-        import icalendar, recurring_ical_events  # noqa: F401
-        return True
-    except ImportError:
-        return False
+    r = subprocess.run([calendar_python(), "-I", "-c", "import icalendar, recurring_ical_events"],
+                       capture_output=True)
+    return r.returncode == 0
 
 
 def fetch_calendar(quiet=True):
     url = URL_FILE.read_text(encoding="utf-8").strip()
     env = {**os.environ, "GCAL_ICS_URL": url}       # env, not argv: keeps it out of process lists
-    args = [sys.executable, "-I", str(CAL_SCRIPT), "--out", str(ROOT / "data" / "schedule.js")]
+    args = [calendar_python(), "-I", str(CAL_SCRIPT), "--out", str(ROOT / "data" / "schedule.js")]
     if quiet:
         args.append("--quiet")
     r = subprocess.run(args, env=env, capture_output=True, text=True)
     for line in (r.stdout + r.stderr).strip().splitlines():
-        print("  calendar:", line)
+        print("  calendar:", line, flush=True)
 
 
 def calendar_loop():
+    """Every 5 min while the display runs. Checks for the link each time, so a
+    calendar connected later (set-calendar) starts working without a restart."""
     while True:
-        fetch_calendar()
+        try:
+            if URL_FILE.is_file():
+                fetch_calendar()
+        except Exception as e:                      # never let the loop die
+            print(f"  calendar: {time.strftime('%Y-%m-%d %H:%M')} error: {type(e).__name__}", flush=True)
         time.sleep(CAL_EVERY)
 
 
@@ -261,19 +275,21 @@ def main():
         size = (w, h)
     url = f"http://127.0.0.1:{port}/index.html{query}"
 
-    print(f"\nLynx AM Lab display — local test\n  {url}\n")
+    print(f"\nLynx AM Lab display — {time.strftime('%Y-%m-%d %H:%M')}\n  {url}\n", flush=True)
     if a.no_calendar:
         print("  hours:    hours.weekly from js/config.js (--no-calendar)")
-    elif not URL_FILE.exists():
-        print("  hours:    hours.weekly from js/config.js  (connect a calendar: --set-calendar)")
     elif not calendar_deps_ok():
         print("  hours:    hours.weekly from js/config.js — calendar reader not installed:")
         print(f"            {Path(sys.executable).name} -m pip install icalendar recurring-ical-events")
     else:
-        print("  hours:    Google Calendar, re-read every 5 min")
+        if URL_FILE.is_file():
+            print("  hours:    Google Calendar, re-read every 5 min")
+        else:
+            print("  hours:    hours.weekly from js/config.js  (connect a calendar: --set-calendar;")
+            print("            it's picked up within 5 min, no restart needed)")
         threading.Thread(target=calendar_loop, daemon=True).start()
     print(f"  media:    {MEDIA_DIR}   (drop files in; empty = media/playlist.js from the repo)")
-    print("  stop:     Ctrl+C\n")
+    print("  stop:     Ctrl+C\n", flush=True)
 
     proc = None if a.no_browser else open_display(url, size, a.fullscreen)
     try:

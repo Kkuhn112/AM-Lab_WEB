@@ -453,7 +453,7 @@
   tickClock(); renderHours(); renderQR(); renderPrinters();
   setInterval(tickClock, 1000);
   setInterval(renderHours, 30 * 1000);
-  setInterval(refreshSchedule, 5 * 60 * 1000);
+  setInterval(refreshSchedule, 60 * 1000);   // cheap local file; the server re-reads the calendar every 5 min
   requestAnimationFrame(() => Player.start());
 
   if (root.classList.contains("kiosk") && C.kiosk?.reloadMinutes > 0) {
