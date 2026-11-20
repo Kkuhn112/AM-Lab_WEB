@@ -157,7 +157,7 @@ Sending a photo from the iPhone by email or AirDrop to a PC often converts it to
 
 ## 6. Put it on the display
 
-Copy the converted `.mp4` into **`AM-Lab-Media`** on the Pi, using WinSCP, `scp`, or a USB stick (see [README.md](README.md#getting-files-onto-the-pi)). It plays within 2 minutes, filling the panel, with no title.
+Copy the converted `.mp4` into **`AM-Lab-Media`** on the Pi, using WinSCP, `scp`, or a USB stick (see [README.md](README.md#getting-files-onto-the-pi)). It plays within about 30 seconds, with no restart, filling the panel with no title.
 
 For an optional title, add a `.txt` file with the same name. Its first line is the title and any further lines are the caption.
 

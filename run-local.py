@@ -43,6 +43,7 @@ ROOT = Path(__file__).resolve().parent
 CONF_DIR = Path(os.environ.get("AMLAB_CONFIG_DIR", Path.home() / ".config" / "am-lab"))
 URL_FILE = CONF_DIR / "calendar-url"
 CAL_SCRIPT = ROOT / "tools" / "gcal_to_schedule.py"
+SETTLE_SECONDS = 5          # ignore files changed this recently (still copying in)
 CAL_EVERY = int(os.environ.get("AMLAB_CAL_EVERY", 5 * 60))   # seconds
 # Top-panel media lives here, on the machine — not in the repo / on GitHub.
 MEDIA_DIR = Path(os.environ.get("AMLAB_MEDIA_DIR", Path.home() / "AM-Lab-Media"))
@@ -82,7 +83,7 @@ Everything in this folder plays on the top/right panel of the lab screen.
     any further lines = caption:
         01 Planetary gearbox.txt   ->  Planetary gearbox
                                        MECH 3xxx final project
-  * Delete a file to remove it. The screen picks up changes within 2 minutes.
+  * Delete a file to remove it. The screen picks up changes within ~30 seconds.
 
 Video standard: 1080 x 1080, MP4 (H.264), background #0B0B0C.
 media/convert.sh in the website repo converts any video to it.
@@ -132,25 +133,43 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_error(404)
         return None
 
+    @staticmethod
+    def settled(f):
+        """(stat, version) for a file that has finished arriving, else None.
+        A file still being copied in over the network (SFTP/scp/SMB) keeps
+        changing; ignore anything touched in the last few seconds. ctime is
+        used too because copy tools often preserve the original mtime."""
+        st = f.stat()
+        if time.time() - max(st.st_mtime, st.st_ctime) < SETTLE_SECONDS:
+            return None
+        return st, f"{int(st.st_mtime)}-{st.st_size}"
+
     def send_media_index(self):
         files, has_playlist = [], False
         if MEDIA_DIR.is_dir():
             has_playlist = (MEDIA_DIR / "playlist.js").is_file()
             for f in MEDIA_DIR.iterdir():
                 if f.is_file() and not f.name.startswith((".", "~$")) and f.suffix.lower() in MEDIA_EXT:
+                    ok = self.settled(f)
+                    if not ok:
+                        continue                                   # still copying in
                     cap = f.with_suffix(".txt")
                     caption = cap.read_text(encoding="utf-8", errors="replace").strip()[:400] if cap.is_file() else ""
-                    files.append({"name": f.name, "caption": caption, "mtime": int(f.stat().st_mtime)})
+                    files.append({"name": f.name, "caption": caption, "mtime": ok[1]})
         self.send_json({"files": files, "playlist": has_playlist})
 
     def send_qr_index(self):
         image, link = None, ""
         if QR_DIR.is_dir():
-            imgs = [f for f in QR_DIR.iterdir()
-                    if f.is_file() and not f.name.startswith(".") and f.suffix.lower() in QR_EXT]
+            imgs = []
+            for f in QR_DIR.iterdir():
+                if f.is_file() and not f.name.startswith(".") and f.suffix.lower() in QR_EXT:
+                    ok = self.settled(f)
+                    if ok:
+                        imgs.append((max(ok[0].st_mtime, ok[0].st_ctime), f.name, ok[1]))
             if imgs:
-                newest = max(imgs, key=lambda f: f.stat().st_mtime)
-                image = {"name": newest.name, "mtime": int(newest.stat().st_mtime)}
+                _, name, version = max(imgs)
+                image = {"name": name, "mtime": version}
             lt = QR_DIR / "link.txt"
             if lt.is_file():
                 lines = lt.read_text(encoding="utf-8", errors="replace").strip().splitlines()

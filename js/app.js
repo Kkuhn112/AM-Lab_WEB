@@ -486,7 +486,7 @@
       if (e.key === "ArrowRight") next();
       if (e.key === "ArrowLeft") show(i - 1);
     });
-    // Check the media folder every 2 min; if anything changed, start the new list.
+    // Check the media folder every 30 s; if anything changed, start the new list.
     async function refresh() {
       const fresh = await loadPlaylist();
       if (signature(fresh) === signature(items)) return;
@@ -494,7 +494,7 @@
       show(0);
     }
     return {
-      start: async () => { items = await loadPlaylist(); show(0); setInterval(refresh, 2 * 60 * 1000); }
+      start: async () => { items = await loadPlaylist(); show(0); setInterval(refresh, 30 * 1000); }
     };
   })();
 

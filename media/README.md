@@ -79,7 +79,7 @@ You need `ffmpeg` installed (`brew install ffmpeg`, `winget install ffmpeg`, or 
 | Add `02 Planetary gearbox.txt` next to it | **Line 1** is shown as the title; any further lines are the caption underneath |
 | Delete or rename a file | It's removed or renamed on screen |
 
-The screen checks the folder every **2 minutes**, so there's no restart or reload needed. Unsupported files (e.g. `.docx`) and hidden files are ignored.
+The screen checks the folder every **30 seconds**, so there's no restart or reload needed. A file that is still being copied in is ignored until the copy finishes. Unsupported files (e.g. `.docx`) and hidden files are ignored.
 
 ### Photos
 Photos work the same way: copy them into `~/AM-Lab-Media`.
@@ -102,14 +102,39 @@ A `seconds` value on a `playlist.js` line overrides these for that one item.
 
 Every change of slide is a crossfade. The new slide fades in over the old one, and a video starts fading out about a second before its end while it's still playing, so it never freezes on its last frame.
 
-### Getting files onto the Pi
-| From | How |
-|---|---|
-| **A USB stick** | Close the kiosk (Alt+F4). Copy the files into the `AM-Lab-Media` folder in the Pi's home folder using the file manager, then reboot or restart the kiosk. |
-| **Your PC, over the network** (Windows) | Use [WinSCP](https://winscp.net), protocol **SFTP**, host `amlab-display.local`, with the Pi's username and password. Drag files into `AM-Lab-Media`. |
-| **Your PC, over the network** (Mac) | Use [Cyberduck](https://cyberduck.io) (SFTP), or the terminal: `scp "02 Planetary gearbox.mp4" amlab@amlab-display.local:AM-Lab-Media/` |
+### Getting files onto the Pi: from your laptop, with the screen running
+You don't need to touch the Pi or stop the display. Copy files over the network, and they appear on screen within about 30 seconds, crossfading into the playlist. Deleting or replacing files works the same way. The QR code folder (`~/AM-Lab-QR`) works the same way too.
 
-SFTP works out of the box because SSH was turned on when the SD card was flashed.
+**Windows: WinSCP (free, drag and drop)**
+1. Install [WinSCP](https://winscp.net).
+2. Create a *New Site* with these settings:
+   - File protocol: **SFTP**
+   - Host name: **`raspberry.local`** (the Pi's name). If that doesn't connect, use its IP address; see below.
+   - User name and password: the Pi's login, e.g. `kkuhn`.
+3. *Save*, then *Login*. The first time, accept the host key prompt.
+4. On the right (the Pi side), open **`AM-Lab-Media`**, and drag photos and videos into it from the left.
+
+**Mac:** [Cyberduck](https://cyberduck.io) (free) works like WinSCP: choose *SFTP*, then the same host, user and password. Or use the Terminal:
+```bash
+scp "01 Bracket.jpg" "02 Gearbox.mp4" kkuhn@raspberry.local:AM-Lab-Media/
+```
+
+**Any laptop, command line (Windows PowerShell has `scp` built in):**
+```bash
+scp "photo.jpg" kkuhn@raspberry.local:AM-Lab-Media/
+```
+
+**If it won't connect:**
+- **SSH must be on** (it is if you enabled it when flashing the SD card). To turn it on, run this on the Pi once:
+  ```bash
+  sudo systemctl enable --now ssh
+  ```
+- **Find the Pi's IP address** (on the Pi): `hostname -I`. Use that number instead of `raspberry.local`. Campus networks often block `.local` names.
+- The laptop and the Pi must be on the **same network**, or one that lets them reach each other. Some campus Wi-Fi isolates devices. If so, use Ethernet or ask IT.
+
+**Large videos:** files still being copied are ignored until the copy finishes, so a half-uploaded video is never shown. They appear about 5 seconds after the copy completes.
+
+**USB stick (at the Pi):** close the kiosk (Alt+F4), copy the files into `AM-Lab-Media` with the file manager, then restart the kiosk or reboot.
 
 ### Full control: a `playlist.js` in the folder
 To set durations, show a file uncropped (`fit: "contain"`), use 3D-model camera angles, or mix in the built-in animation or YouTube, copy the repo's [`playlist.js`](playlist.js) into `~/AM-Lab-Media/playlist.js` and edit it. `file` names then refer to files in `~/AM-Lab-Media`:
