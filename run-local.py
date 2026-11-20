@@ -46,7 +46,7 @@ CAL_SCRIPT = ROOT / "tools" / "gcal_to_schedule.py"
 CAL_EVERY = int(os.environ.get("AMLAB_CAL_EVERY", 5 * 60))   # seconds
 # Top-panel media lives here, on the machine — not in the repo / on GitHub.
 MEDIA_DIR = Path(os.environ.get("AMLAB_MEDIA_DIR", Path.home() / "AM-Lab-Media"))
-MEDIA_EXT = {".mp4", ".webm", ".mov", ".m4v", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif",
+MEDIA_EXT = {".mp4", ".webm", ".mov", ".m4v", ".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".avif", ".bmp",
              ".glb", ".gltf", ".html", ".htm"}
 MEDIA_URL = "/local-media/"
 # Optional print-request QR code kept on the machine: any image in this folder

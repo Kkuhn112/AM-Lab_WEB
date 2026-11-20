@@ -198,8 +198,12 @@ html.split:not(.portrait) .printer-grid.feature .printer:not(:first-child) .prin
 
 /* ---------------- Stage ---------------- */
 .slides { position: absolute; inset: 0; }
-.slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; display: flex; align-items: center; justify-content: center; }
-.slide.active { opacity: 1; }
+/* Crossfade (duration = config display.fadeSeconds → --fade): the incoming
+   slide fades in on top; the outgoing one stays put, then fades out in the
+   second half, so the picture never dips to black between slides. */
+.slide { position: absolute; inset: 0; opacity: 0; z-index: 1; transition: opacity var(--fade, 1.2s) ease-in-out; display: flex; align-items: center; justify-content: center; }
+.slide.active { opacity: 1; z-index: 2; }
+.slide.leaving { opacity: 0; z-index: 1; transition: opacity calc(var(--fade, 1.2s) / 2) ease-in-out calc(var(--fade, 1.2s) / 2); }
 .slide > video, .slide > img, .slide > iframe, .slide > model-viewer, .slide > svg { width: 100%; height: 100%; border: 0; }
 /* Videos and images zoom to fill the panel, centred, cropping whatever
    overflows (no bars). fit: "contain" in a playlist shows the whole frame

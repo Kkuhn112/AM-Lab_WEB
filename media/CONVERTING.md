@@ -142,6 +142,19 @@ HandBrake keeps the original shape (e.g. 16:9). That's fine; the display zooms i
 
 ---
 
+## Photos (iPhone HEIC)
+
+JPG, PNG and WebP photos need no conversion; drop them in as they are. iPhones save **`.heic`** by default, which the display can't show. Convert to JPG:
+
+| On | How |
+|---|---|
+| **The iPhone (going forward)** | *Settings → Camera → Formats → **Most Compatible***. New photos are saved as JPG. |
+| **The Pi / Linux** | `sudo apt install -y libheif-examples`, then `heif-convert "IMG_1234.HEIC" "01 Bracket.jpg"` |
+| **Mac** | Open in Preview → *File → Export* → Format **JPEG**. Or in Terminal: `sips -s format jpeg "IMG_1234.HEIC" --out "01 Bracket.jpg"` |
+| **Windows** | Open in the Photos app → *… → Save as* → choose **.jpg**. |
+
+Sending a photo from the iPhone by email or AirDrop to a PC often converts it to JPG automatically.
+
 ## 6. Put it on the display
 
 Copy the converted `.mp4` into **`AM-Lab-Media`** on the Pi, using WinSCP, `scp`, or a USB stick (see [README.md](README.md#getting-files-onto-the-pi)). It plays within 2 minutes, filling the panel, with no title.
@@ -159,4 +172,5 @@ For an optional title, add a `.txt` file with the same name. Its first line is t
 | `bash: media/convert.sh: No such file` | Run it from inside the `AM-Lab_WEB` folder, or give the full path, e.g. `bash ~/AM-Lab_WEB/media/convert.sh`. |
 | The important part is cropped off | Re-export with the subject centred, or convert with `PAD=1`. |
 | Stutters on the display | Make sure it's 1080 × 1080 at 30 fps, not 4K or 60 fps. Converting fixes both. |
+| A photo doesn't appear | It's probably `.heic`. Convert it to JPG (see *Photos* above). |
 | Converted file still doesn't appear | It must be directly inside `AM-Lab-Media` (not a subfolder) and end in `.mp4`. Windows can hide a double extension like `video.mp4.mov`. |

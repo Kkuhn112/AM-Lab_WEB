@@ -86,6 +86,14 @@ window.LAB_CONFIG = {
     }
   ],
 
+  /* Timing of the dynamic half (top/right panel). The media itself lives in
+     ~/AM-Lab-Media on the machine — see media/README.md.               */
+  display: {
+    slideSeconds: 10,      // photos, 3D models, animations: seconds each (unless a playlist line sets `seconds`)
+    videoSeconds: "full",  // videos: "full" = play to the end; or a number, e.g. 10, to cut them to that length
+    fadeSeconds: 1.2       // crossfade between every slide
+  },
+
   /* The dynamic half of the screen is NOT configured here —
      edit media/playlist.js (see media/README.md).                    */
 

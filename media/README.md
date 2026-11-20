@@ -81,6 +81,27 @@ You need `ffmpeg` installed (`brew install ffmpeg`, `winget install ffmpeg`, or 
 
 The screen checks the folder every **2 minutes**, so there's no restart or reload needed. Unsupported files (e.g. `.docx`) and hidden files are ignored.
 
+### Photos
+Photos work the same way: copy them into `~/AM-Lab-Media`.
+- **Accepted types:** `.jpg` / `.jpeg`, `.png`, `.webp`, `.gif`, `.avif`, `.bmp`. Uppercase extensions like `.JPG` from cameras are fine.
+- **Rotation:** phone photos that are stored sideways are turned upright automatically.
+- **Framing:** like videos, photos zoom to fill the panel and are centred, so keep the subject in the middle.
+- **iPhone HEIC photos (`.heic`)** can't be shown by the browser and are skipped. Convert them to JPG (see [CONVERTING.md](CONVERTING.md#photos-iphone-heic)), or set the iPhone to *Settings → Camera → Formats → Most Compatible*, which saves JPGs.
+- **Size:** photos straight off a phone (12–48 MP) work. Shrinking them to about 2000 px on the long side saves space and loads faster on the Pi.
+
+### Timing and transitions
+Set in `js/config.js` under `display`:
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `slideSeconds` | `10` | How long each photo, 3D model or animation is shown |
+| `videoSeconds` | `"full"` | Videos play to the end. Set a number (e.g. `10`) to cut every video to that length; shorter videos then loop to fill it. |
+| `fadeSeconds` | `1.2` | Length of the crossfade between every slide |
+
+A `seconds` value on a `playlist.js` line overrides these for that one item.
+
+Every change of slide is a crossfade. The new slide fades in over the old one, and a video starts fading out about a second before its end while it's still playing, so it never freezes on its last frame.
+
 ### Getting files onto the Pi
 | From | How |
 |---|---|
@@ -109,7 +130,7 @@ When `playlist.js` is present, only what it lists plays. If it has a typo, the s
 | `file` | The file name in the folder. It can also be a full `https://` link, a YouTube link, or `"builtin:hotend"`. |
 | `title` | Optional heading, drawn in the caption zone. |
 | `caption` | Optional sentence under the title. |
-| `seconds` | How long to show the item. Videos default to their own length; images default to 10 s; YouTube defaults to 30 s, so set it. |
+| `seconds` | How long to show the item. The defaults come from `display` in `js/config.js`: 10 s for photos and models, full length for videos. YouTube defaults to 30 s, so set it. |
 | `fit` | `"cover"` (default) zooms to fill the panel, centred, cropping the overflow. `"contain"` shows the whole frame, with background around it. |
 | `orbit` | For `.glb` only: the starting camera angle, e.g. `"120deg 72deg 100%"`. |
 | `skip` | Set to `true` to keep the line but not play it. |

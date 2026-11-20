@@ -11,8 +11,8 @@
    "file" names there refer to files in ~/AM-Lab-Media.
 
    WHAT "file" CAN BE (the type is detected from the extension)
-     .mp4 .webm .mov    video. Plays once, then moves on (or set seconds).
-     .jpg .png .webp .gif   image, shown for `seconds` (default 10)
+     .mp4 .webm .mov    video. Plays to the end, then crossfades on (or set seconds).
+     .jpg .png .webp .gif .avif .bmp   photo, shown for `seconds` (default 10)
      .glb .gltf         3D model. Its animation autoplays and it slowly turns.
      .html              any custom animation page
      https://youtu.be/… or a youtube.com link: YouTube video (needs internet)
@@ -21,7 +21,8 @@
    OPTIONAL FIELDS
      title      large heading over the bottom of the frame
      caption    one or two sentences under the title
-     seconds    how long to show it (videos default to their own length)
+     seconds    how long to show it (defaults: display.slideSeconds = 10 for
+                photos/models, full length for videos — set in js/config.js)
      fit        "cover" (default: zoom to fill the panel, centred, crops the overflow)
                 or "contain" (whole frame, never cropped, background around it)
      orbit      3D models only: camera angle, e.g. "120deg 72deg 100%"

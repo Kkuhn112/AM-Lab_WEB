@@ -256,6 +256,11 @@
     grid.style.setProperty("--fc", 1 + (list.length - 1) / 2);
   }
 
+  const DISPLAY = C.display || {};
+  const SLIDE_SECONDS = DISPLAY.slideSeconds ?? 10;
+  const FADE = DISPLAY.fadeSeconds ?? 1.2;
+  root.style.setProperty("--fade", FADE + "s");
+
   /* ---------------- Playlist ----------------
      Where the top panel's media comes from, first match wins:
        1. ~/AM-Lab-Media/playlist.js on the machine   (full control)
@@ -274,18 +279,21 @@
     // fit: "cover" (default) zooms to fill the panel, centred, cropping the overflow;
     //      "contain" shows the whole frame with background around it.
     const base = { title: e.title, caption: e.caption, duration: e.seconds, fit: e.fit === "contain" ? "contain" : "cover" };
-    if (f === "builtin:hotend") return { ...base, type: "exploded-demo" };
+    const vidDefault = typeof DISPLAY.videoSeconds === "number" ? DISPLAY.videoSeconds : undefined;
+    if (f === "builtin:hotend") return { ...base, type: "exploded-demo", duration: e.seconds ?? SLIDE_SECONDS };
     const yt = f.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-    if (yt) return { ...base, type: "youtube", id: yt[1], duration: e.seconds || 30 };
+    if (yt) return { ...base, type: "youtube", id: yt[1], duration: e.seconds ?? vidDefault ?? 30 };
     const src = /^(https?:)?\/\/|^\//.test(f) ? f : prefix + f.split("/").map(encodeURIComponent).join("/");
     const ext = (f.split("?")[0].split(".").pop() || "").toLowerCase();
     const type = { mp4: "video", webm: "video", mov: "video", m4v: "video",
-      jpg: "image", jpeg: "image", png: "image", webp: "image", gif: "image", avif: "image",
+      jpg: "image", jpeg: "image", jfif: "image", png: "image", webp: "image", gif: "image", avif: "image", bmp: "image",
       glb: "model", gltf: "model", html: "iframe", htm: "iframe" }[ext];
     if (!type) { console.warn("[AM Lab] unknown file type in playlist:", f); return null; }
     const out = { ...base, type, src };
-    if (type === "image" && !out.duration) out.duration = 10;
-    if (type === "iframe" && !out.duration) out.duration = 15;
+    // Photos/models/animations: config display.slideSeconds (10). Videos: their own
+    // length ("full") unless display.videoSeconds or the line's `seconds` says otherwise.
+    if (type === "video") out.duration = e.seconds ?? vidDefault;
+    else out.duration = e.seconds ?? SLIDE_SECONDS;
     if (type === "model") { out.cameraOrbit = e.orbit; out.autoRotate = e.rotate !== false; out.animation = e.animation; }
     return out;
   }
@@ -349,7 +357,7 @@
   const Player = (() => {
     const slidesEl = $("slides"), cap = $("stageCaption"), bar = $("stageProgress");
     let items = [];
-    let i = -1, current = null, timer = null, failures = 0;
+    let i = -1, current = null, timer = null, failures = 0, gen = 0;
 
     function setCaption(it) {
       cap.classList.add("out");
@@ -396,12 +404,23 @@
           v.src = it.src;
           v.addEventListener("canplay", () => { v.play().catch(() => {}); ready(v.duration); }, { once: true });
           v.addEventListener("error", fail, { once: true });
-          if (!it.duration) v.addEventListener("ended", () => next());
+          if (!it.duration) {
+            // Full-length video: start the crossfade just before the last frame, so
+            // it's still playing while the next slide fades in (no frozen frame).
+            let advanced = false;
+            const go = () => { if (!advanced && current && current.el === s) { advanced = true; next(); } };
+            v.addEventListener("timeupdate", () => {
+              if (items.length > 1 && v.duration && v.currentTime >= v.duration - FADE) go();
+            });
+            v.addEventListener("ended", go);
+          }
           s.appendChild(v); break;
         }
         case "image": {
           const im = new Image();
-          im.onload = () => ready(); im.onerror = fail;
+          // decode before fading in, so big photos don't stutter mid-fade
+          im.onload = () => (im.decode ? im.decode() : Promise.resolve()).then(() => ready(), () => ready());
+          im.onerror = fail;
           im.alt = it.title || ""; im.src = it.src;
           s.appendChild(im); break;
         }
@@ -429,20 +448,26 @@
       if (!items.length) return;
       i = (n + items.length) % items.length;
       const it = items[i];
+      const my = ++gen;                 // a slide that finishes loading after we've moved on is dropped
       let done = false, built = null;
       // create() may call ready() synchronously, before `built` exists — defer.
       const ready = (secs) => queueMicrotask(() => onReady(secs));
       const fail = () => queueMicrotask(onFail);
       function onReady(mediaSeconds) {
-        if (done) return; done = true; failures = 0;
+        if (done) return; done = true;
+        if (my !== gen) { built.api.destroy(); built.el.remove(); return; }
+        failures = 0;
         const prev = current; current = built;
-        requestAnimationFrame(() => built.el.classList.add("active"));
+        // Crossfade: the new slide fades in on top; the old one stays visible
+        // underneath, then fades out during the second half (no dip to dark).
+        requestAnimationFrame(() => requestAnimationFrame(() => built.el.classList.add("active")));
         if (prev) {
+          prev.el.classList.add("leaving");
           prev.el.classList.remove("active");
-          setTimeout(() => { prev.api.destroy(); prev.el.remove(); }, 1100); // free GPU memory
+          setTimeout(() => { prev.api.destroy(); prev.el.remove(); }, FADE * 1000 + 200); // free GPU memory
         }
         setCaption(it);
-        const secs = it.duration || (it.type === "video" && isFinite(mediaSeconds) ? mediaSeconds : 12);
+        const secs = it.duration || (it.type === "video" && isFinite(mediaSeconds) ? mediaSeconds : SLIDE_SECONDS);
         progress(items.length > 1 ? secs : 0);
         if (items.length > 1 && !(it.type === "video" && !it.duration)) timer = setTimeout(next, secs * 1000);
       }
