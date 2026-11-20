@@ -49,6 +49,26 @@ MEDIA_DIR = Path(os.environ.get("AMLAB_MEDIA_DIR", Path.home() / "AM-Lab-Media")
 MEDIA_EXT = {".mp4", ".webm", ".mov", ".m4v", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif",
              ".glb", ".gltf", ".html", ".htm"}
 MEDIA_URL = "/local-media/"
+# Optional print-request QR code kept on the machine: any image in this folder
+# replaces the QR generated from printForm.url; link.txt sets the text under it.
+QR_DIR = Path(os.environ.get("AMLAB_QR_DIR", Path.home() / "AM-Lab-QR"))
+QR_URL = "/local-qr/"
+QR_EXT = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"}
+QR_README = """AM LAB DISPLAY - PRINT REQUEST QR CODE
+=====================================
+Put a QR code image (.png) in this folder and the display shows it in the
+"Submit a print request" box instead of the built-in one.
+
+  * Any file name works. If there are several images, the newest is used.
+  * Optional: link.txt with the form's web address on the first line. It is
+    shown under the QR code and is what the code is clicked through to on the
+    website. Without it, no address is shown.
+  * Remove the image to go back to the QR code generated from js/config.js.
+  * Changes appear within a minute.
+
+Tips: use a plain black-on-white QR code with a white border around it,
+at least 600 x 600 pixels.
+"""
 MEDIA_README = """AM LAB DISPLAY - TOP PANEL MEDIA
 ================================
 Everything in this folder plays on the top/right panel of the lab screen.
@@ -84,20 +104,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
-    # /local-media/…  → files in MEDIA_DIR (outside the repo)
-    # /local-media/index.json → what's in it, for the player
+    # /local-media/… → files in MEDIA_DIR, /local-qr/… → files in QR_DIR
+    # (both outside the repo); each has an index.json describing it.
     def do_GET(self):
-        if self.path.split("?")[0] == MEDIA_URL + "index.json":
+        route = self.path.split("?")[0]
+        if route == MEDIA_URL + "index.json":
             return self.send_media_index()
+        if route == QR_URL + "index.json":
+            return self.send_qr_index()
         return super().do_GET()
 
     def translate_path(self, path):
         clean = urllib.parse.unquote(path.split("?", 1)[0].split("#", 1)[0])
-        if not clean.startswith(MEDIA_URL):
+        for prefix, folder in ((MEDIA_URL, MEDIA_DIR), (QR_URL, QR_DIR)):
+            if clean.startswith(prefix):
+                break
+        else:
             return super().translate_path(path)
-        parts = [p for p in clean[len(MEDIA_URL):].split("/") if p not in ("", ".", "..")]
-        target = MEDIA_DIR.joinpath(*parts).resolve() if parts else MEDIA_DIR.resolve()
-        base = MEDIA_DIR.resolve()
+        parts = [p for p in clean[len(prefix):].split("/") if p not in ("", ".", "..")]
+        base = folder.resolve()
+        target = folder.joinpath(*parts).resolve() if parts else base
         if target != base and base not in target.parents:     # no escaping the folder
             return str(base / "__forbidden__")
         return str(target)
@@ -115,7 +141,24 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     cap = f.with_suffix(".txt")
                     caption = cap.read_text(encoding="utf-8", errors="replace").strip()[:400] if cap.is_file() else ""
                     files.append({"name": f.name, "caption": caption, "mtime": int(f.stat().st_mtime)})
-        body = json.dumps({"files": files, "playlist": has_playlist}).encode()
+        self.send_json({"files": files, "playlist": has_playlist})
+
+    def send_qr_index(self):
+        image, link = None, ""
+        if QR_DIR.is_dir():
+            imgs = [f for f in QR_DIR.iterdir()
+                    if f.is_file() and not f.name.startswith(".") and f.suffix.lower() in QR_EXT]
+            if imgs:
+                newest = max(imgs, key=lambda f: f.stat().st_mtime)
+                image = {"name": newest.name, "mtime": int(newest.stat().st_mtime)}
+            lt = QR_DIR / "link.txt"
+            if lt.is_file():
+                lines = lt.read_text(encoding="utf-8", errors="replace").strip().splitlines()
+                link = lines[0].strip()[:300] if lines else ""
+        self.send_json({"image": image, "link": link})
+
+    def send_json(self, obj):
+        body = json.dumps(obj).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
@@ -256,9 +299,10 @@ def main():
     if a.set_calendar:
         set_calendar()
 
-    if not MEDIA_DIR.exists():
-        MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-        (MEDIA_DIR / "README.txt").write_text(MEDIA_README, encoding="utf-8")
+    for folder, readme in ((MEDIA_DIR, MEDIA_README), (QR_DIR, QR_README)):
+        if not folder.exists():
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / "README.txt").write_text(readme, encoding="utf-8")
     srv, port = start_server(a.port)
     if a.web:
         query, size = "?mode=web", (1280, 860)
@@ -289,6 +333,7 @@ def main():
             print("            it's picked up within 5 min, no restart needed)")
         threading.Thread(target=calendar_loop, daemon=True).start()
     print(f"  media:    {MEDIA_DIR}   (drop files in; empty = media/playlist.js from the repo)")
+    print(f"  QR code:  {QR_DIR}   (drop a .png in; empty = generated from printForm.url)")
     print("  stop:     Ctrl+C\n", flush=True)
 
     proc = None if a.no_browser else open_display(url, size, a.fullscreen)

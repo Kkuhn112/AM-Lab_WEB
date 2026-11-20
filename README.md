@@ -30,6 +30,13 @@ vendor/, fonts/       model-viewer (Apache-2.0), qrcode-generator (MIT), Inter (
 
 All times use the lab's timezone (`America/Denver`), so the open/closed status is correct no matter where the page is viewed from.
 
+### Print-request QR code (kept on the Pi)
+By default, the QR code is generated from `printForm.url` above. To use your own QR code image instead, without putting it in the repo, copy a **PNG** into **`~/AM-Lab-QR`** on the Pi, the same way you add media (WinSCP, `scp`, or USB).
+- Any file name works. If there are several images, the newest is used.
+- **Optional:** a `link.txt` in the same folder with the form's address on the first line. It's shown under the code. Without it, no address is shown.
+- Changes appear within a minute. Delete the PNG to go back to the generated code.
+- For reliable scanning, use a plain black-on-white code with a white border, at least 600 × 600 px.
+
 ### Printer photos
 Photos are square JPGs on a white background in `assets/printers/`. The current ones come from the lab's existing site. To add one (e.g. the Fiber Seeker), crop the machine tightly, then centre it on a white square of about 1000×1000 px with a small margin. Point the printer's `image` to the file.
 

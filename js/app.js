@@ -196,7 +196,7 @@
     $("qrHeading").textContent = f.heading;
     $("qrBlurb").textContent = f.blurb || "";
     const u = $("qrUrl");
-    u.href = f.url; u.textContent = f.displayUrl || f.url.replace(/^https?:\/\//, "");
+    u.href = f.url; u.textContent = f.displayUrl || f.url.replace(/^https?:\/\//, ""); u.hidden = false;
     $("qrLink").href = f.url;
     const box = $("qrBox");
     if (f.qrImage) { box.innerHTML = `<img src="${esc(f.qrImage)}" alt="">`; return; }
@@ -206,6 +206,30 @@
     let d = "";
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c},${r}h1v1h-1z`;
     box.innerHTML = `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QR code"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#0e0e0f"/></svg>`;
+  }
+
+  // A QR image kept on the machine (~/AM-Lab-QR, served at local-qr/) wins
+  // over the generated one; link.txt there sets the address shown under it.
+  // Re-checked every minute; on GitHub Pages / file:// there's none → no change.
+  let localQR = "";
+  async function checkLocalQR() {
+    let idx = null;
+    try {
+      const r = await fetch("local-qr/index.json", { cache: "no-store" });
+      if (r.ok) idx = await r.json();
+    } catch (e) { /* no local server */ }
+    const key = idx && idx.image ? JSON.stringify(idx) : "";
+    if (key === localQR) return;
+    localQR = key;
+    if (!key) { renderQR(); return; }                  // image removed → generated QR again
+    const link = (idx.link || "").trim();
+    const href = /^https?:\/\//i.test(link) ? link : (link ? "https://" + link : "");
+    $("qrBox").innerHTML = `<img src="local-qr/${encodeURIComponent(idx.image.name)}?v=${idx.image.mtime}" alt="QR code for the print request form">`;
+    const u = $("qrUrl");
+    u.textContent = link.replace(/^https?:\/\//i, "");
+    u.hidden = !link;
+    if (href) { u.href = href; $("qrLink").href = href; }
+    else { u.removeAttribute("href"); $("qrLink").removeAttribute("href"); }
   }
 
   /* ---------------- Printers ---------------- */
@@ -450,7 +474,8 @@
   })();
 
   /* ---------------- Boot ---------------- */
-  tickClock(); renderHours(); renderQR(); renderPrinters();
+  tickClock(); renderHours(); renderQR(); renderPrinters(); checkLocalQR();
+  setInterval(checkLocalQR, 60 * 1000);
   setInterval(tickClock, 1000);
   setInterval(renderHours, 30 * 1000);
   setInterval(refreshSchedule, 60 * 1000);   // cheap local file; the server re-reads the calendar every 5 min

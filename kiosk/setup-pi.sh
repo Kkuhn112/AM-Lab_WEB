@@ -21,7 +21,7 @@ X-GNOME-Autostart-enabled=true
 DESK
 
 echo "• Creating the media folder ~/AM-Lab-Media (top-panel videos live here, not on GitHub)…"
-mkdir -p "$HOME/AM-Lab-Media"
+mkdir -p "$HOME/AM-Lab-Media" "$HOME/AM-Lab-QR"   # QR: optional print-request QR image
 
 echo "• Installing the calendar reader (Python venv, outside the repo)…"
 VENV="$HOME/.local/share/am-lab/venv"

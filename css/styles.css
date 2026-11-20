@@ -241,3 +241,4 @@ html.split:not(.portrait) .printer-grid.feature .printer:not(:first-child) .prin
 @media (prefers-reduced-motion: reduce) {
 }
 html:not(.split) .printer-grid { align-items: start; }
+.qr img { max-height: 15rem; object-fit: contain; }
